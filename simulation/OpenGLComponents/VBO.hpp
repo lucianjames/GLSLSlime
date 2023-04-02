@@ -12,10 +12,10 @@ namespace openGLComponents{
                 glDeleteBuffers(1, &this->ID);
             }
             template<typename T>
-            void generate(std::vector<T> data, unsigned int count){
+            void generate(std::vector<T> data, unsigned int size){
                 glGenBuffers(1, &this->ID);
                 glBindBuffer(GL_ARRAY_BUFFER, this->ID); // Bind the buffer to the GL_ARRAY_BUFFER target
-                glBufferData(GL_ARRAY_BUFFER, count*sizeof(T), &data[0], GL_STATIC_DRAW); // Copy the data to the buffer
+                glBufferData(GL_ARRAY_BUFFER, size, &data[0], GL_STATIC_DRAW); // Copy the data to the buffer
             }
             void bind(){
                 glBindBuffer(GL_ARRAY_BUFFER, this->ID);

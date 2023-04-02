@@ -32,10 +32,17 @@ private:
         }
     )glsl";
 
-    std::vector<float> helloTriangleVertices = {
-        -0.5f, -0.5f, 0.0f,  // left
-        0.5f, -0.5f, 0.0f,  // right
-        0.0f,  0.5f, 0.0f   // top
+    std::vector<float> helloQuadVertices = {
+        // - positions -     - texture coords -
+        // First triangle
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f,   1.0f, 0.0f,
+        0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
+        // Second triangle
+        0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f
+
     };
 
     openGLComponents::VAO vao;
@@ -52,15 +59,16 @@ public:
         this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
         this->shader.use(); // Otherwise the uniform won't be set
         this->shader.setUniform3f("ourColor", 1.0f, 0.2f, 0.6f);
-        this->vbo.generate(this->helloTriangleVertices, this->helloTriangleVertices.size());
+        this->vbo.generate(this->helloQuadVertices, this->helloQuadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
+        this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
     }
 
     void drawHelloTriangle(){
         this->shader.use();
         this->vao.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, this->helloQuadVertices.size() / 5);
     }
 
 
