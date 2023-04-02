@@ -90,10 +90,13 @@ public:
         this->texture.init(textureResolution);
         this->texture.bind();
         std::cout << "Updating texture" << std::endl;
-        float* data = new float[textureResolution * textureResolution * 3];
+        float* data = new float[textureResolution * textureResolution * 4]; // RGBA = 4
         // Make it all white
-        for(int i = 0; i < textureResolution * textureResolution * 3; i++){
+        for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
             data[i] = 1.0f;
+            data[i + 1] = i / (float)(textureResolution * textureResolution * 4);
+            data[i + 2] = 0.0f;
+            data[i + 3] = 1.0f;
         }
         this->texture.update(data);
         delete[] data;
