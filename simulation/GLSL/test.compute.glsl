@@ -2,13 +2,13 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img;
 
-// Do something cool and animated for testing purposes
 void main(){
-    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = vec2(pos) / vec2(imageSize(img));
-    vec3 col = vec3(0.0);
-    col.r = sin(uv.x * 10.0 + uv.y * 10.0 + float(gl_NumWorkGroups.x) * 0.1);
-    col.g = sin(uv.x * 10.0 + uv.y * 10.0 + float(gl_NumWorkGroups.y) * 0.1);
-    col.b = sin(uv.x * 10.0 + uv.y * 10.0 + float(gl_NumWorkGroups.z) * 0.1);
-    imageStore(img, pos, vec4(col, 1.0));
+    vec4 color = imageLoad(img, ivec2(gl_WorkGroupID.xy));
+    float x = float(gl_WorkGroupID.x % 255) / 255.0;
+    float y = float(gl_WorkGroupID.y % 255) / 255.0;
+    color.r *= 0.9;
+    color.g *= 0.9;
+    color.r += x*0.1;
+    color.g += y*0.1;
+    imageStore(img, ivec2(gl_WorkGroupID.xy), color);
 }

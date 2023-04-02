@@ -74,13 +74,12 @@ private:
     openGLComponents::computeShader testComputeShader;
 
 public:
-    main(unsigned int textureResolution = 128){
+    main(unsigned int textureResolution = 1024){
         this->texture.init(textureResolution);
         this->texture.bind();
 
         std::cout << "Updating texture" << std::endl;
         float* data = new float[textureResolution * textureResolution * 4]; // RGBA = 4
-        // Make it all white
         for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
             data[i] = 1.0f;
             data[i + 1] = i / 4 % textureResolution / (float)textureResolution;
