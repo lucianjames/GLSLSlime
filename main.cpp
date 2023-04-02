@@ -9,9 +9,9 @@
 #include <iostream>
 #include <thread>
 
-#include "debugMessageCallback.hpp"
-#include "simulationSettings.hpp"
-
+#include "misc/debugMessageCallback.hpp"
+#include "simulation/settingsWindow.hpp"
+#include "simulation/simulation.hpp"
 
 int main(){
     /*
@@ -43,6 +43,8 @@ int main(){
         ===== Simulation setup
     */
     simulationSettings settings;
+    simulation sim;
+    sim.setupHelloTriangle();
 
 
     /*
@@ -57,6 +59,7 @@ int main(){
 
         // ===== Draw imgui window, update+render simulation
         settings.draw();
+        sim.drawHelloTriangle();
 
         // ===== Render imgui and swap buffers
         ImGui::Render();

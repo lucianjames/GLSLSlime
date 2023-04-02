@@ -24,6 +24,3 @@ target_link_libraries(
         imgui
         glm
 )
-
-# Copy GLSL_files to the build directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/GLSL_files DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
