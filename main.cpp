@@ -10,26 +10,28 @@
 #include <thread>
 
 #include "debugMessageCallback.hpp"
+#include "simulationSettings.hpp"
 
-int main(int argc, char *argv[]){
+
+int main(){
+    /*
+        ===== GLFW/GLAD/IMGUI setup
+        will probably move this into some function later
+    */
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    auto window = glfwCreateWindow(800, 600, "Simulation", nullptr, nullptr);
+    auto window = glfwCreateWindow(1024, 1024, "Simulation", nullptr, nullptr);
     if(!window){
         throw std::runtime_error("Error creating glfw window");
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
-
     if(!gladLoaderLoadGL()){
         throw std::runtime_error("Error initializing glad");
     }
-
     glDebugMessageCallback(debug::messageCallback, nullptr);
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -37,22 +39,26 @@ int main(int argc, char *argv[]){
     ImGui::StyleColorsClassic();
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+    /*
+        ===== Simulation setup
+    */
+    simulationSettings settings;
+
+
+    /*
+        ===== Main loop
+    */
     while(!glfwWindowShouldClose(window)){
+        // ===== Process input and start a new imgui frame
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        static bool showDemo = false;
-        ImGui::Begin("Example");
-        if(ImGui::Button("Show/Hide ImGui demo")){
-            showDemo = !showDemo;
-        }
-        ImGui::End();
-        if(showDemo){
-            ImGui::ShowDemoWindow(&showDemo);
-        }
+        // ===== Draw imgui window, update+render simulation
+        settings.draw();
 
+        // ===== Render imgui and swap buffers
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
@@ -60,10 +66,12 @@ int main(int argc, char *argv[]){
         std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Not sure why this is here but someone clearly added it for a reason so ill keep it lol
     }
 
+    /*
+        ===== Cleanup
+    */
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
