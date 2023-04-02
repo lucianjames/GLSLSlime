@@ -10,12 +10,7 @@
 #include <thread>
 
 #include "misc/debugMessageCallback.hpp"
-#include "simulation/settingsWindow.hpp"
 #include "simulation/simulation.hpp"
-
-void framebufferSizeCallback(GLFWwindow* window, int width, int height){
-    glViewport(0, 0, width, height);
-}
 
 int main(){
     /*
@@ -26,11 +21,11 @@ int main(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    auto window = glfwCreateWindow(1024, 1024, "Simulation", nullptr, nullptr);
+    auto window = glfwCreateWindow(simulation::globalsForBufferSizeCallback::windowStartWidth, simulation::globalsForBufferSizeCallback::windowStartHeight, "Hello Triangle", nullptr, nullptr);
     if(!window){
         throw std::runtime_error("Error creating glfw window");
     }
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetFramebufferSizeCallback(window, simulation::framebufferSizeCallback);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     if(!gladLoaderLoadGL()){
@@ -47,8 +42,7 @@ int main(){
     /*
         ===== Simulation setup
     */
-    simulationSettings settings;
-    simulation sim;
+    simulation::main sim;
     sim.setupHelloTriangle();
 
 
@@ -63,8 +57,8 @@ int main(){
         ImGui::NewFrame();
 
         // ===== Draw imgui window, update+render simulation
-        settings.draw();
         sim.drawHelloTriangle();
+        sim.update(); // just draws imgui dummy menu stuff for now
 
         // ===== Render imgui and swap buffers
         ImGui::Render();
