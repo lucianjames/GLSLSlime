@@ -25,7 +25,7 @@ private:
         #version 330 core
         out vec4 FragColor;
 
-        in vec3 ourColor;
+        uniform vec3 ourColor;
 
         void main(){
             FragColor = vec4(ourColor, 1.0);
@@ -50,7 +50,8 @@ public:
 
     void setupHelloTriangle(){
         this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
-        this->shader.setUniform3f("ourColor", 1.0f, 0.5f, 0.2f);
+        this->shader.use(); // Otherwise the uniform won't be set
+        this->shader.setUniform3f("ourColor", 1.0f, 0.2f, 0.6f);
         this->vbo.generate(this->helloTriangleVertices, this->helloTriangleVertices.size());
         this->layout.pushFloat(3);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
