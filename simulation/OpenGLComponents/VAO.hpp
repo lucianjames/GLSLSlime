@@ -2,6 +2,7 @@
 #include <glad/gl.h>
 
 #include "VBO.hpp"
+#include "debugging.hpp"
 
 namespace openGLComponents{
     class VAO{
@@ -11,15 +12,15 @@ namespace openGLComponents{
 
         public:
             VAO(){
-                glGenVertexArrays(1, &this->ID);
+                GLCall(glGenVertexArrays(1, &this->ID));
             }
 
             ~VAO(){
-                glDeleteVertexArrays(1, &this->ID);
+                GLCall(glDeleteVertexArrays(1, &this->ID));
             }
 
             void bind(){
-                glBindVertexArray(this->ID);
+                GLCall(glBindVertexArray(this->ID));
             }
 
             void addBuffer(VBO& v, const VBOLayout& l){
@@ -29,9 +30,9 @@ namespace openGLComponents{
                 unsigned int offset = 0;
                 for(int i=0; i<elements.size(); i++){
                     const auto& element = elements[i]; // Get the element
-                    glEnableVertexAttribArray(i + attribOffset); // Enable the vertex attribute
+                    GLCall(glEnableVertexAttribArray(i + attribOffset)); // Enable the vertex attribute
                     // Then set tthe attribute:
-                    glVertexAttribPointer(i + attribOffset, element.count, element.type, element.normalized, l.getStride(), (const void*)offset);
+                    GLCall(glVertexAttribPointer(i + attribOffset, element.count, element.type, element.normalized, l.getStride(), (const void*)offset));
                     offset += element.count * VBOElement::getSizeOfType(element.type); // Increment the offset
                 }
                 this->attribOffset += elements.size();

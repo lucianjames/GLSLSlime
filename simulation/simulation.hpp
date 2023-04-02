@@ -41,24 +41,26 @@ private:
     // Some basic shaders for testing (cant be bothered putting them into a separate file yet)
     const char* basicVertexShaderSource = R"glsl(
         #version 330 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aColor;
+        layout (location = 0) in vec3 position;
+        layout (location = 1) in vec2 texCoord;
 
-        out vec3 ourColor;
+        out vec2 v_texCoord;
 
         void main(){
-            gl_Position = vec4(aPos, 1.0);
-            ourColor = aColor;
+            gl_Position = vec4(position, 1.0);
+            v_texCoord = texCoord;
         }
     )glsl";
     const char* basicFragmentShaderSource = R"glsl(
         #version 330 core
         out vec4 FragColor;
+        in vec2 v_texCoord;
 
-        uniform vec3 ourColor;
+        uniform sampler2D textureSampler;
 
         void main(){
-            FragColor = vec4(ourColor, 1.0);
+            vec4 texColor = texture(textureSampler, v_texCoord);
+	        FragColor = texColor;
         }
     )glsl";
 
@@ -84,23 +86,31 @@ private:
     openGLComponents::simulationTexture texture;
 
 public:
-    main(unsigned int textureResolution = 1024){
+    main(unsigned int textureResolution = 128){
         this->texture.init(textureResolution);
-        this->texture.bind(0, 0, 0);
+        this->texture.bind();
+        std::cout << "Updating texture" << std::endl;
+        float* data = new float[textureResolution * textureResolution * 3];
+        // Make it all white
+        for(int i = 0; i < textureResolution * textureResolution * 3; i++){
+            data[i] = 1.0f;
+        }
+        this->texture.update(data);
+        delete[] data;
     }
 
     // Testing stuff
     void setupHelloTriangle(){
         this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
-        this->shader.use(); // Otherwise the uniform won't be set
-        this->shader.setUniform3f("ourColor", 1.0f, 0.2f, 0.6f);
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
     }
-    void drawHelloTriangle(){
+    
+    void render(){
         this->shader.use();
+        this->texture.bind();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);
     }

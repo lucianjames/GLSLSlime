@@ -31,13 +31,13 @@ int main(){
     if(!gladLoaderLoadGL()){
         throw std::runtime_error("Error initializing glad");
     }
-    glDebugMessageCallback(debug::messageCallback, nullptr);
+    GLCall(glDebugMessageCallback(debug::messageCallback, nullptr));
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 450 core");
     ImGui::StyleColorsClassic();
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
 
     /*
         ===== Simulation setup
@@ -57,14 +57,14 @@ int main(){
         ImGui::NewFrame();
 
         // ===== Draw imgui window, update+render simulation
-        sim.drawHelloTriangle();
+        sim.render();
         sim.update(); // just draws imgui dummy menu stuff for now
 
         // ===== Render imgui and swap buffers
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
-        glClear(GL_COLOR_BUFFER_BIT);
+        GLCall(glClear(GL_COLOR_BUFFER_BIT));
         std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Not sure why this is here but someone clearly added it for a reason so ill keep it lol
     }
 

@@ -2,6 +2,8 @@
 #include <glad/gl.h>
 #include <vector>
 
+#include "debugging.hpp"
+
 namespace openGLComponents{
     class VBO{
         private:
@@ -9,16 +11,16 @@ namespace openGLComponents{
 
         public:
             ~VBO(){
-                glDeleteBuffers(1, &this->ID);
+                GLCall(glDeleteBuffers(1, &this->ID));
             }
             template<typename T>
             void generate(std::vector<T> data, unsigned int size){
-                glGenBuffers(1, &this->ID);
-                glBindBuffer(GL_ARRAY_BUFFER, this->ID); // Bind the buffer to the GL_ARRAY_BUFFER target
-                glBufferData(GL_ARRAY_BUFFER, size, &data[0], GL_STATIC_DRAW); // Copy the data to the buffer
+                GLCall(glGenBuffers(1, &this->ID));
+                GLCall(glBindBuffer(GL_ARRAY_BUFFER, this->ID)); // Bind the buffer to the GL_ARRAY_BUFFER target
+                GLCall(glBufferData(GL_ARRAY_BUFFER, size, &data[0], GL_STATIC_DRAW)); // Copy the data to the buffer
             }
             void bind(){
-                glBindBuffer(GL_ARRAY_BUFFER, this->ID);
+                GLCall(glBindBuffer(GL_ARRAY_BUFFER, this->ID));
             }
     };
 

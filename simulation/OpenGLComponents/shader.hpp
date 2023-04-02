@@ -13,16 +13,16 @@ private:
         // Create and compile a shader:
         unsigned int id = glCreateShader(type); // Create shader
         const char* src = source.c_str(); // Get the source code
-        glShaderSource(id, 1, &src, nullptr); // Set shader source
-        glCompileShader(id); // Compile shader
+        GLCall(glShaderSource(id, 1, &src, nullptr)); // Set shader source
+        GLCall(glCompileShader(id)); // Compile shader
         // Give us some information if compilation fails:
         int result; // Create an integer to store the compile status
-        glGetShaderiv(id, GL_COMPILE_STATUS, &result); // Get the compile status
+        GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result)); // Get the compile status
         if (result == GL_FALSE) { // If the compile failed:
             char info[1024]; // Create a buffer for the error message
-            glGetShaderInfoLog(id, 1024, NULL, info); // Get the error message
+            GLCall(glGetShaderInfoLog(id, 1024, NULL, info)); // Get the error message
             std::cout << "Failed to compile shader\n" << info << std::endl; // Print the error message
-            glDeleteShader(id); // Delete the shader
+            GLCall(glDeleteShader(id)); // Delete the shader
             return 0;
         }
         return id; // Return the shader id
@@ -71,24 +71,23 @@ public:
         unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fShaderCode); // Compile the fragment shader and store the id
         // Create Shader Program:
         ID = glCreateProgram();
-        glAttachShader(ID, vs);
-        glAttachShader(ID, fs);
-        glLinkProgram(ID);
+        GLCall(glAttachShader(ID, vs));
+        GLCall(glAttachShader(ID, fs));
+        GLCall(glLinkProgram(ID));
         // Print linking errors if any
-        glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramInfoLog(ID, 512, NULL, infoLog);
+        GLCall(glGetProgramiv(ID, GL_LINK_STATUS, &success));
+        if (!success){
+            GLCall(glGetProgramInfoLog(ID, 512, NULL, infoLog));
             std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
         }
         // ========== 3. Clean up shaders
         // Delete the shaders as they're linked into our program now and no longer necessary
-        glDeleteShader(vs);
-        glDeleteShader(fs);
+        GLCall(glDeleteShader(vs));
+        GLCall(glDeleteShader(fs));
     }
 
     void use(){
-        glUseProgram(this->ID);
+        GLCall(glUseProgram(this->ID));
     }
 
     void setUniform4f(const std::string& name, float x, float y, float z, float w){
