@@ -9,7 +9,7 @@
 #include "OpenGLComponents/shader.hpp"
 #include "OpenGLComponents/simulationTexture.hpp"
 #include "OpenGLComponents/computeShader.hpp"
-
+#include "OpenGLComponents/SSBO.hpp"
 
 namespace simulation{
     namespace winGlobals{
@@ -71,10 +71,18 @@ private:
     openGLComponents::VBOLayout layout;
     openGLComponents::shader shader;
     openGLComponents::simulationTexture texture;
+
+    // Just for testing!!
     openGLComponents::computeShader testComputeShader;
+    struct testComputeShaderStruct{
+        unsigned int x = 0;
+        unsigned int y = 0;
+    };
+    std::vector<testComputeShaderStruct> testComputeShaderData;
+    openGLComponents::SSBO testSSBO; // Above vector will be stored in this SSBO
 
 public:
-    main(unsigned int textureResolution = 1024){
+    main(unsigned int textureResolution = 100){
         this->texture.init(textureResolution);
         this->texture.bind();
 
@@ -100,12 +108,21 @@ public:
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
         
-        this->testComputeShader.createShaderFromDisk("GLSL/test.compute.glsl");
+        this->testComputeShader.createShaderFromDisk("GLSL/ssboTest.compute.glsl");
+        // Fill the testComputeShaderData vector with data
+        for(int i = 0; i < 128; i++){
+            testComputeShaderStruct temp;
+            temp.x = rand() % textureResolution;
+            temp.y = rand() % textureResolution;
+            this->testComputeShaderData.push_back(temp);
+        }
+        this->testSSBO.generate((void*)this->testComputeShaderData.data(), this->testComputeShaderData.size() * sizeof(testComputeShaderStruct));
+        this->testSSBO.bind(this->testComputeShader.getID(), "Positions", 0);
     }
     
     void render(){
         this->texture.bind();
-        this->testComputeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        this->testComputeShader.execute(this->testComputeShaderData.size(), 1, 1);
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);

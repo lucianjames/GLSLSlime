@@ -67,6 +67,10 @@ class computeShader{
             GLCall(glDispatchCompute(ngx, ngy, ngz));
 	        GLCall(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
         }
+
+        unsigned int getID(){
+            return this->ID;
+        }
     
 };
 
