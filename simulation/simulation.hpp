@@ -64,9 +64,13 @@ private:
         uniform float zoomMultiplier;
 
         void main(){
+            vec2 offset = vec2(offsetX, offsetY);
             gl_Position = vec4(position, 1.0f);
-            v_texCoord = texCoord + vec2(offsetX, offsetY);
-            v_texCoord *= vec2(textureRatio, 1.0f) * zoomMultiplier;
+            v_texCoord = texCoord + offset;
+            v_texCoord -= 0.5f + offset;
+            v_texCoord *= zoomMultiplier;
+            v_texCoord += 0.5f - offset;
+            v_texCoord *= vec2(textureRatio, 1.0f);
         }
     )glsl";
     const char* basicFragmentShaderSource = R"glsl(
