@@ -112,6 +112,8 @@ public:
     // Testing stuff
     void setupHelloTriangle(){
         this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
+        this->shader.use();
+        this->shader.setUniform1f("textureRatio", this->textureRatio);
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
