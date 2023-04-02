@@ -50,42 +50,6 @@ private:
     // More important stuff
     float textureRatio = 1.0f; // Used to ensure that the texture is always square regardless of the window size
 
-    // Some basic shaders for testing (cant be bothered putting them into a separate file yet)
-    const char* basicVertexShaderSource = R"glsl(
-        #version 330 core
-        layout (location = 0) in vec3 position;
-        layout (location = 1) in vec2 texCoord;
-
-        out vec2 v_texCoord;
-
-        uniform float textureRatio;
-        uniform float offsetX;
-        uniform float offsetY;
-        uniform float zoomMultiplier;
-
-        void main(){
-            vec2 offset = vec2(offsetX, offsetY);
-            gl_Position = vec4(position, 1.0f);
-            v_texCoord = texCoord + offset;
-            v_texCoord -= 0.5f + offset;
-            v_texCoord *= zoomMultiplier;
-            v_texCoord += 0.5f - offset;
-            v_texCoord *= vec2(textureRatio, 1.0f);
-        }
-    )glsl";
-    const char* basicFragmentShaderSource = R"glsl(
-        #version 330 core
-        out vec4 FragColor;
-        in vec2 v_texCoord;
-
-        uniform sampler2D textureSampler;
-
-        void main(){
-            vec4 texColor = texture(textureSampler, v_texCoord);
-	        FragColor = texColor;
-        }
-    )glsl";
-
     // The quad which the simulation is rendered to
     std::vector<float> quadVertices = {
         // - positions -  - texture coords -
@@ -124,7 +88,7 @@ public:
         this->texture.update(data);
         delete[] data;
 
-        this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
+        this->shader.createShaderFromDisk("GLSL/quadVertShader.glsl", "GLSL/quadFragShader.glsl");
         this->shader.use();
         this->shader.setUniform1f("textureRatio", this->textureRatio);
         this->shader.setUniform1f("offsetX", this->offsetX_inShader);

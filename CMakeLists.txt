@@ -24,3 +24,7 @@ target_link_libraries(
         imgui
         glm
 )
+
+# Get all .glsl files in ./simulation/GLSL and copy them to the build directory (under ./GLSL)
+file(GLOB_RECURSE GLSL_FILES "simulation/GLSL/*.glsl")
+file(COPY ${GLSL_FILES} DESTINATION ${CMAKE_BINARY_DIR}/GLSL)
