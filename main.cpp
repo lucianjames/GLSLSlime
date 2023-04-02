@@ -13,6 +13,10 @@
 #include "simulation/settingsWindow.hpp"
 #include "simulation/simulation.hpp"
 
+void framebufferSizeCallback(GLFWwindow* window, int width, int height){
+    glViewport(0, 0, width, height);
+}
+
 int main(){
     /*
         ===== GLFW/GLAD/IMGUI setup
@@ -26,6 +30,7 @@ int main(){
     if(!window){
         throw std::runtime_error("Error creating glfw window");
     }
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     if(!gladLoaderLoadGL()){
