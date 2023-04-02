@@ -9,6 +9,8 @@ namespace openGLComponents{
 
 class shader{
     private:
+        unsigned int ID;
+        
         unsigned int compileShader(unsigned int type, const std::string& source){
             // Create and compile a shader:
             unsigned int id = glCreateShader(type); // Create shader
@@ -29,7 +31,6 @@ class shader{
         }
 
     public:
-        unsigned int ID; // Shader ID, Ideally this wouldnt need to be public
 
         void createShaderFromDisk(const char* vertexPath, const char* fragmentPath){
             // ========= 1. Retrieve the vertex/fragment source code from filePath
