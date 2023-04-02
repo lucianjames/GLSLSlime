@@ -43,8 +43,6 @@ int main(){
         ===== Simulation setup
     */
     simulation::main sim;
-    sim.setupHelloTriangle();
-
 
     /*
         ===== Main loop

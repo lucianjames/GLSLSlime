@@ -31,13 +31,21 @@ private:
     // Settings (dummy for now)
     int widthHeightResolution = 1024;
     float offsetX = 0;
+    float offsetX_inShader = 0;
     float offsetY = 0;
+    float offsetY_inShader = 0;
     float zoomMultiplier = 1;
+    float zoomMultiplier_inShader = 1;
     float sensorDistance = 1;
+    float sensorDistance_inShader = 1;
     float sensorAngle = 1;
+    float sensorAngle_inShader = 1;
     float turnSpeed = 1;
+    float turnSpeed_inShader = 1;
     float pixelMultiplier = 0.1;
+    float pixelMultiplier_inShader = 0.1;
     float newPixelMultiplier = 0.89;
+    float newPixelMultiplier_inShader = 0.89;
 
     // More important stuff
     float textureRatio = 1.0f; // Used to ensure that the texture is always square regardless of the window size
@@ -51,11 +59,14 @@ private:
         out vec2 v_texCoord;
 
         uniform float textureRatio;
+        uniform float offsetX;
+        uniform float offsetY;
+        uniform float zoomMultiplier;
 
         void main(){
             gl_Position = vec4(position, 1.0f);
-            v_texCoord = texCoord;
-            v_texCoord *= vec2(textureRatio, 1.0f);
+            v_texCoord = texCoord + vec2(offsetX, offsetY);
+            v_texCoord *= vec2(textureRatio, 1.0f) * zoomMultiplier;
         }
     )glsl";
     const char* basicFragmentShaderSource = R"glsl(
@@ -96,24 +107,25 @@ public:
     main(unsigned int textureResolution = 128){
         this->texture.init(textureResolution);
         this->texture.bind();
+
         std::cout << "Updating texture" << std::endl;
         float* data = new float[textureResolution * textureResolution * 4]; // RGBA = 4
         // Make it all white
         for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
             data[i] = 1.0f;
-            data[i + 1] = i / (float)(textureResolution * textureResolution * 4);
-            data[i + 2] = i%textureResolution / (float)textureResolution;
+            data[i + 1] = i / 4 % textureResolution / (float)textureResolution;
+            data[i + 2] = i / 4 / textureResolution / (float)textureResolution;
             data[i + 3] = 1.0f;
         }
         this->texture.update(data);
         delete[] data;
-    }
 
-    // Testing stuff
-    void setupHelloTriangle(){
         this->shader.createShaderFromSource(this->basicVertexShaderSource, this->basicFragmentShaderSource);
         this->shader.use();
         this->shader.setUniform1f("textureRatio", this->textureRatio);
+        this->shader.setUniform1f("offsetX", this->offsetX_inShader);
+        this->shader.setUniform1f("offsetY", this->offsetY_inShader);
+        this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
@@ -128,20 +140,43 @@ public:
     }
 
     void update(){
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(600, 240));
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(600, 240), ImGuiCond_Once);
         ImGui::Begin("Simulation Settings");
-        ImGui::SliderInt("Width/Height Resolution", &widthHeightResolution, 0, 8192);
-        ImGui::SliderFloat("Offset X", &offsetX, -100, 100);
-        ImGui::SliderFloat("Offset Y", &offsetY, -100, 100);
-        ImGui::SliderFloat("Zoom Multiplier", &zoomMultiplier, 0, 100);
-        ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 100);
-        ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 2);
-        ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 10);
-        ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
-        ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
+        //ImGui::SliderInt("Width/Height Resolution", &widthHeightResolution, 0, 8192);
+        ImGui::SliderFloat("Offset X", &offsetX, -2, 2);
+        ImGui::SliderFloat("Offset Y", &offsetY, -2, 2);
+        ImGui::SliderFloat("Zoom Multiplier", &zoomMultiplier, 0, 10);
+        //ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 100);
+        //ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 2);
+        //ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 10);
+        //ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
+        //ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
         ImGui::End();
 
+        /*
+            Now update any settings (or whatever) that need to be updated
+        */
+
+        if(this->offsetX_inShader != this->offsetX){
+            this->offsetX_inShader = this->offsetX;
+            this->shader.use();
+            this->shader.setUniform1f("offsetX", this->offsetX_inShader);
+        }
+
+        if(this->offsetY_inShader != this->offsetY){
+            this->offsetY_inShader = this->offsetY;
+            this->shader.use();
+            this->shader.setUniform1f("offsetY", this->offsetY_inShader);
+        }
+
+        if(this->zoomMultiplier_inShader != this->zoomMultiplier){
+            this->zoomMultiplier_inShader = this->zoomMultiplier;
+            this->shader.use();
+            this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
+        }
+
+        // ... Rest are TODO once they actually do something
 
         if(winGlobals::currentHeight != winGlobals::newHeight
         || winGlobals::currentWidth != winGlobals::newWidth){
