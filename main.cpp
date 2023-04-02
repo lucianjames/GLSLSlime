@@ -19,9 +19,9 @@ int main(){
     */
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    auto window = glfwCreateWindow(simulation::globalsForBufferSizeCallback::windowStartWidth, simulation::globalsForBufferSizeCallback::windowStartHeight, "Hello Triangle", nullptr, nullptr);
+    auto window = glfwCreateWindow(simulation::winGlobals::windowStartWidth, simulation::winGlobals::windowStartHeight, "Hello Triangle", nullptr, nullptr);
     if(!window){
         throw std::runtime_error("Error creating glfw window");
     }

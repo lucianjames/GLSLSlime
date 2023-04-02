@@ -11,15 +11,19 @@
 
 
 namespace simulation{
-    namespace globalsForBufferSizeCallback{
+    namespace winGlobals{
         const int windowStartWidth = 1024;
         const int windowStartHeight = 1024;
+        int currentWidth = windowStartWidth;
+        int currentHeight = windowStartHeight;
         int newWidth = windowStartWidth;
         int newHeight = windowStartHeight;
     }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height){
-    glViewport(0, 0, width, height);
+    GLCall(glViewport(0, 0, width, height));
+    winGlobals::newWidth = width;
+    winGlobals::newHeight = height;
 }
 
 class main{
@@ -46,9 +50,12 @@ private:
 
         out vec2 v_texCoord;
 
+        uniform float textureRatio;
+
         void main(){
-            gl_Position = vec4(position, 1.0);
+            gl_Position = vec4(position, 1.0f);
             v_texCoord = texCoord;
+            v_texCoord *= vec2(textureRatio, 1.0f);
         }
     )glsl";
     const char* basicFragmentShaderSource = R"glsl(
@@ -68,13 +75,13 @@ private:
     std::vector<float> quadVertices = {
         // - positions -  - texture coords -
         // First triangle
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f,   1.0f, 0.0f,
-        0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+        1.0f,  1.0f, 0.0f,   1.0f, 1.0f,
         // Second triangle
-        0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
-        -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f
+        1.0f,  1.0f, 0.0f,   1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f
 
     };
 
@@ -95,7 +102,7 @@ public:
         for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
             data[i] = 1.0f;
             data[i + 1] = i / (float)(textureResolution * textureResolution * 4);
-            data[i + 2] = 0.0f;
+            data[i + 2] = i%textureResolution / (float)textureResolution;
             data[i + 3] = 1.0f;
         }
         this->texture.update(data);
@@ -118,7 +125,6 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);
     }
 
-    // Just a dummy menu thing for now
     void update(){
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(600, 240));
@@ -133,6 +139,17 @@ public:
         ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
         ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
         ImGui::End();
+
+
+        if(winGlobals::currentHeight != winGlobals::newHeight
+        || winGlobals::currentWidth != winGlobals::newWidth){
+            this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
+            winGlobals::currentHeight = winGlobals::newHeight;
+            winGlobals::currentWidth = winGlobals::newWidth;
+            this->shader.use();
+            this->shader.setUniform1f("textureRatio", textureRatio);
+            std::cout << "New texture ratio: " << textureRatio << "\n";
+        }
     }
 
 };
