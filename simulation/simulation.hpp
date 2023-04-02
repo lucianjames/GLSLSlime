@@ -8,6 +8,7 @@
 #include "OpenGLComponents/VBO.hpp"
 #include "OpenGLComponents/shader.hpp"
 #include "OpenGLComponents/simulationTexture.hpp"
+#include "OpenGLComponents/computeShader.hpp"
 
 
 namespace simulation{
@@ -70,6 +71,7 @@ private:
     openGLComponents::VBOLayout layout;
     openGLComponents::shader shader;
     openGLComponents::simulationTexture texture;
+    openGLComponents::computeShader testComputeShader;
 
 public:
     main(unsigned int textureResolution = 128){
@@ -88,7 +90,7 @@ public:
         this->texture.update(data);
         delete[] data;
 
-        this->shader.createShaderFromDisk("GLSL/quadVertShader.glsl", "GLSL/quadFragShader.glsl");
+        this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
         this->shader.setUniform1f("textureRatio", this->textureRatio);
         this->shader.setUniform1f("offsetX", this->offsetX_inShader);
@@ -98,11 +100,14 @@ public:
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
+        
+        this->testComputeShader.createShaderFromDisk("GLSL/test.compute.glsl");
     }
     
     void render(){
-        this->shader.use();
         this->texture.bind();
+        this->testComputeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);
     }

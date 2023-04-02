@@ -10,7 +10,7 @@ namespace openGLComponents{
 class shader{
     private:
         unsigned int ID;
-        
+
         unsigned int compileShader(unsigned int type, const std::string& source){
             // Create and compile a shader:
             unsigned int id = glCreateShader(type); // Create shader
@@ -31,6 +31,27 @@ class shader{
         }
 
     public:
+        void createShaderFromSource(const char* vShaderCode, const char* fShaderCode){
+            int success;
+            char infoLog[512];
+            unsigned int vs = compileShader(GL_VERTEX_SHADER, vShaderCode); // Compile the vertex shader and store the id
+            unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fShaderCode); // Compile the fragment shader and store the id
+            // Create Shader Program:
+            ID = glCreateProgram();
+            GLCall(glAttachShader(ID, vs));
+            GLCall(glAttachShader(ID, fs));
+            GLCall(glLinkProgram(ID));
+            // Print linking errors if any
+            GLCall(glGetProgramiv(ID, GL_LINK_STATUS, &success));
+            if (!success){
+                GLCall(glGetProgramInfoLog(ID, 512, NULL, infoLog));
+                std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+            }
+            // ========== 3. Clean up shaders
+            // Delete the shaders as they're linked into our program now and no longer necessary
+            GLCall(glDeleteShader(vs));
+            GLCall(glDeleteShader(fs));
+        }
 
         void createShaderFromDisk(const char* vertexPath, const char* fragmentPath){
             // ========= 1. Retrieve the vertex/fragment source code from filePath
@@ -55,36 +76,13 @@ class shader{
                 // Convert stream into string
                 vertexCode = vShaderStream.str();
                 fragmentCode = fShaderStream.str();
-            }
-            catch (std::ifstream::failure e){
+            }catch (std::ifstream::failure e){
                 std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
             }
             const char* vShaderCode = vertexCode.c_str(); // Get the vertex shader code in a c-string
             const char* fShaderCode = fragmentCode.c_str(); // Get the fragment shader code in a c-string
             // ========== 2. Compile shaders:
-            createShaderFromSource(vShaderCode, fShaderCode);
-        }
-
-        void createShaderFromSource(const char* vShaderCode, const char* fShaderCode){
-            int success;
-            char infoLog[512];
-            unsigned int vs = compileShader(GL_VERTEX_SHADER, vShaderCode); // Compile the vertex shader and store the id
-            unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fShaderCode); // Compile the fragment shader and store the id
-            // Create Shader Program:
-            ID = glCreateProgram();
-            GLCall(glAttachShader(ID, vs));
-            GLCall(glAttachShader(ID, fs));
-            GLCall(glLinkProgram(ID));
-            // Print linking errors if any
-            GLCall(glGetProgramiv(ID, GL_LINK_STATUS, &success));
-            if (!success){
-                GLCall(glGetProgramInfoLog(ID, 512, NULL, infoLog));
-                std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-            }
-            // ========== 3. Clean up shaders
-            // Delete the shaders as they're linked into our program now and no longer necessary
-            GLCall(glDeleteShader(vs));
-            GLCall(glDeleteShader(fs));
+            this->createShaderFromSource(vShaderCode, fShaderCode);
         }
 
         void use(){
