@@ -150,7 +150,6 @@ public:
             winGlobals::currentWidth = winGlobals::newWidth;
             this->shader.use();
             this->shader.setUniform1f("textureRatio", textureRatio);
-            std::cout << "New texture ratio: " << textureRatio << "\n";
         }
     }
 
