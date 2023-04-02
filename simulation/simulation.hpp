@@ -1,4 +1,6 @@
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -29,24 +31,28 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height){
 
 class main{
 private:
-    // Settings (dummy for now)
-    int widthHeightResolution = 1024;
+    int widthHeightResolution = 128;
+    int agentCount = 10;
+
     float offsetX = 0;
-    float offsetX_inShader = 0;
     float offsetY = 0;
-    float offsetY_inShader = 0;
     float zoomMultiplier = 1;
-    float zoomMultiplier_inShader = 1;
-    float sensorDistance = 1;
-    float sensorDistance_inShader = 1;
+
+    float sensorDistance = 10;
     float sensorAngle = 1;
-    float sensorAngle_inShader = 1;
     float turnSpeed = 1;
-    float turnSpeed_inShader = 1;
-    float pixelMultiplier = 0.1;
-    float pixelMultiplier_inShader = 0.1;
-    float newPixelMultiplier = 0.89;
-    float newPixelMultiplier_inShader = 0.89;
+    float pixelMultiplier = 0.2;
+    float newPixelMultiplier = 0.8;
+
+    float offsetX_inShader = offsetX;
+    float offsetY_inShader = offsetY;
+    float zoomMultiplier_inShader = zoomMultiplier;
+
+    float sensorDistance_inShader = sensorDistance;
+    float sensorAngle_inShader = sensorAngle;
+    float turnSpeed_inShader = turnSpeed;
+    float pixelMultiplier_inShader = pixelMultiplier;
+    float newPixelMultiplier_inShader = newPixelMultiplier;
 
     // More important stuff
     float textureRatio = 1.0f; // Used to ensure that the texture is always square regardless of the window size
@@ -72,21 +78,23 @@ private:
     openGLComponents::shader shader;
     openGLComponents::simulationTexture texture;
 
-    // Just for testing!!
-    openGLComponents::computeShader testComputeShader;
+    openGLComponents::computeShader computeShader;
     struct testComputeShaderStruct{
-        unsigned int x = 0;
-        unsigned int y = 0;
+        float xPos = 0;
+        float yPos = 0;
+        float angle = 0;
     };
-    std::vector<testComputeShaderStruct> testComputeShaderData;
-    openGLComponents::SSBO testSSBO; // Above vector will be stored in this SSBO
+    std::vector<testComputeShaderStruct> computeShaderData;
+    openGLComponents::SSBO SSBO; // Above vector will be stored in this SSBO
+
+    openGLComponents::computeShader diffuseFadeShader;
 
 public:
-    main(unsigned int textureResolution = 100){
-        this->texture.init(textureResolution);
+    main(){
+        this->texture.init(this->widthHeightResolution);
         this->texture.bind();
 
-        std::cout << "Updating texture" << std::endl;
+        /*
         float* data = new float[textureResolution * textureResolution * 4]; // RGBA = 4
         for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
             data[i] = 1.0f;
@@ -96,6 +104,7 @@ public:
         }
         this->texture.update(data);
         delete[] data;
+        */
 
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
@@ -108,21 +117,38 @@ public:
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
         
-        this->testComputeShader.createShaderFromDisk("GLSL/ssboTest.compute.glsl");
-        // Fill the testComputeShaderData vector with data
-        for(int i = 0; i < 128; i++){
+        this->computeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
+        this->computeShader.use();
+        this->computeShader.setUniform1i("size", this->widthHeightResolution);
+        this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
+        this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
+        this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
+        this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
+        this->diffuseFadeShader.use();
+        this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution);
+        this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
+        this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
+
+        // Fill the computeShaderData vector with data
+        for(int i = 0; i < this->agentCount; i++){
             testComputeShaderStruct temp;
-            temp.x = rand() % textureResolution;
-            temp.y = rand() % textureResolution;
-            this->testComputeShaderData.push_back(temp);
+            temp.xPos = 128;
+            temp.yPos = 128;
+            temp.angle = rand() % 360;
+            this->computeShaderData.push_back(temp);
         }
-        this->testSSBO.generate((void*)this->testComputeShaderData.data(), this->testComputeShaderData.size() * sizeof(testComputeShaderStruct));
-        this->testSSBO.bind(this->testComputeShader.getID(), "Positions", 0);
+        this->SSBO.generate((void*)this->computeShaderData.data(), this->computeShaderData.size() * sizeof(testComputeShaderStruct));
+        this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
     }
     
     void render(){
         this->texture.bind();
-        this->testComputeShader.execute(this->testComputeShaderData.size(), 1, 1);
+        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
+        this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        
+        // Artificial delay for testing
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);

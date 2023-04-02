@@ -72,6 +72,52 @@ class computeShader{
             return this->ID;
         }
     
+        void setUniform4f(const std::string& name, float x, float y, float z, float w){
+            this->use();
+            glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
+        }
+        void setUniform3f(const std::string& name, float x, float y, float z){
+            this->use();
+            glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
+        }
+        void setUniform2f(const std::string& name, float x, float y){
+            this->use();
+            glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
+        }
+        void setUniform1f(const std::string& name, float x){
+            this->use();
+            glUniform1f(glGetUniformLocation(ID, name.c_str()), x);
+        }
+
+        void setUniform4i(const std::string& name, int x, int y, int z, int w){
+            this->use();
+            glUniform4i(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
+        }
+        void setUniform3i(const std::string& name, int x, int y, int z){
+            this->use();
+            glUniform3i(glGetUniformLocation(ID, name.c_str()), x, y, z);
+        }
+        void setUniform2i(const std::string& name, int x, int y){
+            this->use();
+            glUniform2i(glGetUniformLocation(ID, name.c_str()), x, y);
+        }
+        void setUniform1i(const std::string& name, int x){
+            this->use();
+            glUniform1i(glGetUniformLocation(ID, name.c_str()), x);
+        }
+        
+        void setUniformMat4fv(const std::string& name, const float* matrix){
+            this->use();
+            glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, matrix);
+        }
+        void setUniformMat3fv(const std::string& name, const float* matrix){
+            this->use();
+            glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, matrix);
+        }
+        void setUniformMat2fv(const std::string& name, const float* matrix){
+            this->use();
+            glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, matrix);
+        }
 };
 
 }
