@@ -16,16 +16,6 @@ layout (std140, binding=2) buffer agentData{
     vec3 data[];
 };
 
-vec4 getPixel(float angle, float dist, uint agentID){
-    vec2 location = vec2(data[agentID].x, data[agentID].y) + vec2(cos(angle), sin(angle))*dist;
-	ivec2 intLoc = ivec2(int(location[0]), int(location[1]));
-	if (intLoc[0] >= size){ intLoc[0] -= size-1; }
-	if (intLoc[0] <= 0){ intLoc [0] += size+1; }	
-	if (intLoc[1] >= size){ intLoc[1] -= size-1; }
-	if (intLoc[1] <= 0){ intLoc[1] += size+1; }
-	return imageLoad(img, intLoc);
-}
-
 ivec2 getPixelCoords(float angle, float dist, uint agentID){
     vec2 location = vec2(data[agentID].x, data[agentID].y) + vec2(cos(angle), sin(angle))*dist;
 	ivec2 intLoc = ivec2(int(location[0]), int(location[1]));
@@ -35,6 +25,12 @@ ivec2 getPixelCoords(float angle, float dist, uint agentID){
 	if (intLoc[1] <= 0){ intLoc[1] += size+1; }
     return intLoc;
 }
+
+vec4 getPixel(float angle, float dist, uint agentID){
+	ivec2 intLoc = getPixelCoords(angle, dist, agentID);
+	return imageLoad(img, intLoc);
+}
+
 
 void loopBounds(inout vec2 pos){
 	if(pos[0] >= size){ pos[0] -= size; }
@@ -67,5 +63,6 @@ void main(){
     data[agentID].y = newpos[1];
 
     // Draw a pixel at the agents location
-    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), ((direction.x+1)*vec4(agentXDirectionColour, 0.0f) + ((direction.y+1)*vec4(agentYDirectionColour, 0.0f)) + vec4(mainAgentColour, 1.0f)));
+    vec3 colour = (((direction.x+1)*agentXDirectionColour + ((direction.y+1)*agentYDirectionColour) + mainAgentColour))/1.5f;
+    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(colour, 1.0f));
 }
