@@ -41,13 +41,11 @@ namespace simulation{
         }
 
         void scrollCallback(GLFWwindow* window, double xOffset, double yOffset){
-            std::cout << "Scroll: " << xOffset << ", " << yOffset << std::endl;
             controlGlobals::scrollYOffset = yOffset;
         }
 
         void cursorPositionCallback(GLFWwindow*window, double xPos, double yPos){
             if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS){
-                std::cout << "Right mouse button clicked at pos: " << xPos << ", " << yPos << std::endl;
                 controlGlobals::mouseClickXPos = xPos;
                 controlGlobals::mouseClickYPos = yPos;
                 controlGlobals::rmbClicked = true;
@@ -187,11 +185,6 @@ public:
         ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
         ImGui::End();
 
-        /*
-            Now update any settings (or whatever) that need to be updated
-        */
-
-
         if(this->sensorDistance_inShader != this->sensorDistance){
             this->sensorDistance_inShader = this->sensorDistance;
             this->computeShader.use();
@@ -229,49 +222,33 @@ public:
             this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             this->shader.use();
             this->shader.setUniform1f("textureRatio", this->textureRatio);
+            
         }
 
         if(controlGlobals::scrollYOffset != 0){
-            this->zoomMultiplier -= controlGlobals::scrollYOffset / 40.0f;
+            this->zoomMultiplier -= (controlGlobals::scrollYOffset / 40.0f) * this->zoomMultiplier*5;
             this->zoomMultiplier = (this->zoomMultiplier < 0)? 0 : this->zoomMultiplier;
-            std::cout << "zoom: " << this->zoomMultiplier << std::endl;
             controlGlobals::scrollYOffset = 0;
+            this->shader.use();
+            this->zoomMultiplier_inShader = this->zoomMultiplier;
+            this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
         }
 
         if(controlGlobals::rmbClicked){
-            std::cout << "Mouse click prev: " << controlGlobals::prevMouseClickXPos << ", " << controlGlobals::prevMouseClickYPos << "\n"
-            << "Mouse click: " << controlGlobals::mouseClickXPos << ", " << controlGlobals::mouseClickYPos << std::endl;
-            
-            std::cout << "px/x=" << controlGlobals::prevMouseClickXPos / controlGlobals::mouseClickXPos << std::endl;
-            std::cout << "py/y=" << controlGlobals::prevMouseClickYPos / controlGlobals::mouseClickYPos << std::endl;
             double xr = controlGlobals::prevMouseClickXPos / controlGlobals::mouseClickXPos;
             double yr = controlGlobals::prevMouseClickYPos / controlGlobals::mouseClickYPos;
-
             this->offsetX += (1-xr)*this->zoomMultiplier;
             this->offsetY -= (1-yr)*this->zoomMultiplier;
-            
             controlGlobals::rmbClicked = false;
             controlGlobals::prevMouseClickXPos = controlGlobals::mouseClickXPos;
             controlGlobals::prevMouseClickYPos = controlGlobals::mouseClickYPos;
-        }
-
-        if(this->offsetX_inShader != this->offsetX){
+            this->shader.use();
             this->offsetX_inShader = this->offsetX;
-            this->shader.use();
             this->shader.setUniform1f("offsetX", this->offsetX_inShader);
-        }
-
-        if(this->offsetY_inShader != this->offsetY){
             this->offsetY_inShader = this->offsetY;
-            this->shader.use();
             this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         }
 
-        if(this->zoomMultiplier_inShader != this->zoomMultiplier){
-            this->zoomMultiplier_inShader = this->zoomMultiplier;
-            this->shader.use();
-            this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
-        }
     }
 
 };
