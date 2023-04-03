@@ -33,7 +33,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height){
 class main{
 private:
     int widthHeightResolution = 2048;
-    int agentCount = 1000;
+    int agentCount = 1000000;
 
     float offsetX = 0;
     float offsetY = 0;
@@ -85,6 +85,8 @@ private:
         float yPos = 0;
         float angle = 0;
         float compatibility = 1234; // Struct layouts are stupid
+        // Basically, NEVER EVER create a layout (std140, std430, whatever) that holds a vec3
+        // It just wont work as expected
     };
     std::vector<testComputeShaderStruct> computeShaderData;
     openGLComponents::SSBO SSBO; // Above vector will be stored in this SSBO
@@ -143,7 +145,6 @@ public:
             temp.yPos = (dis(gen) - 0.5f) * 100.0f + this->widthHeightResolution / 2;
             temp.angle = (rand() % 100000000) / 100000000.0f * 2 * 3.14159265359f;
             this->computeShaderData.push_back(temp);
-            std::cout << this->computeShaderData.back().xPos << " " << this->computeShaderData.back().yPos << " " << this->computeShaderData.back().angle << std::endl;
         }
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
