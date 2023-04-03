@@ -25,7 +25,9 @@ int main(){
     if(!window){
         throw std::runtime_error("Error creating glfw window");
     }
-    glfwSetFramebufferSizeCallback(window, simulation::framebufferSizeCallback);
+    glfwSetFramebufferSizeCallback(window, simulation::callbacks::framebufferSizeCallback);
+    glfwSetScrollCallback(window, simulation::callbacks::scrollCallback);
+    glfwSetCursorPosCallback(window, simulation::callbacks::cursorPositionCallback);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     if(!gladLoaderLoadGL()){
@@ -50,6 +52,7 @@ int main(){
     while(!glfwWindowShouldClose(window)){
         // ===== Process input and start a new imgui frame
         glfwPollEvents();
+        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){ glfwSetWindowShouldClose(window, true); }
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
