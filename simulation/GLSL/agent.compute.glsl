@@ -8,6 +8,9 @@ uniform float sensorAngle;
 uniform float turnSpeed;
 uniform int drawSensors;
 uniform vec3 sensorColour;
+uniform vec3 mainAgentColour;
+uniform vec3 agentYDirectionColour;
+uniform vec3 agentXDirectionColour;
 
 layout (std140, binding=2) buffer agentData{
     vec3 data[];
@@ -64,6 +67,5 @@ void main(){
     data[agentID].y = newpos[1];
 
     // Draw a pixel at the agents location
-    
-    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(0.0f, 1.0f, (direction[1]+1)/2, 1.0f));
+    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), ((direction.x+1)*vec4(agentXDirectionColour, 0.0f) + ((direction.y+1)*vec4(agentYDirectionColour, 0.0f)) + vec4(mainAgentColour, 1.0f)));
 }

@@ -72,6 +72,9 @@ private:
     float pixelMultiplier = 0.1;
     float newPixelMultiplier = 0.89;
     bool drawSensors = false;
+    float* mainAgentColour = new float[3]{0.0f, 0.7f, 0.4f};
+    float* agentXDirectionColour = new float[3]{0.0f, 0.0f, 0.7f};
+    float* agentYDirectionColour = new float[3]{0.0f, 0.7f, 0.0f};
     float* sensorColour = new float[3]{0.4f, 0.3f, 0.7f};
 
     float offsetX_inShader = offsetX;
@@ -84,6 +87,9 @@ private:
     float pixelMultiplier_inShader = pixelMultiplier;
     float newPixelMultiplier_inShader = newPixelMultiplier;
     bool drawSensors_inShader = drawSensors;
+    float mainAgentColour_inShader[3] = {0.0f, 0.7f, 0.4f};
+    float agentXDirectionColour_inShader[3] = {0.0f, 0.0f, 0.7f};
+    float agentYDirectionColour_inShader[3] = {0.0f, 0.7f, 0.0f};
     float sensorColour_inShader[3] = {0.4f, 0.3f, 0.7f};
 
     // The quad which the simulation is rendered to
@@ -137,6 +143,16 @@ private:
         }
     }
 
+    template<typename T>
+    bool arryCmp(T* arr1, T* arr2, int size){
+        for(int i = 0; i < size; i++){
+            if(arr1[i] != arr2[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+
 public:
     main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
         this->agentCount = n_agents;
@@ -146,7 +162,9 @@ public:
 
     ~main(){
         delete[] this->sensorColour;
-        delete[] this->sensorColour_inShader;
+        delete[] this->mainAgentColour;
+        delete[] this->agentXDirectionColour;
+        delete[] this->agentYDirectionColour;
     }
     
     void setup(){
@@ -170,6 +188,9 @@ public:
         this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
         this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
         this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
+        this->computeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
+        this->computeShader.setUniform3f("agentXDirectionColour", 0.0f, 0.0f, 1.0f);
+        this->computeShader.setUniform3f("agentYDirectionColour", 0.0f, 0.0f, 0.0f);
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution);
@@ -191,13 +212,16 @@ public:
 
     void update(){
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(600, 240), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(600, 300), ImGuiCond_Once);
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
         ImGui::SliderFloat("Pixel Multiplier", &this->pixelMultiplier, 0, 1);
         ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
+        ImGui::ColorEdit3("Main Agent Colour", this->mainAgentColour);
+        ImGui::ColorEdit3("Agent X Direction Colour", this->agentXDirectionColour);
+        ImGui::ColorEdit3("Agent Y Direction Colour", this->agentYDirectionColour);
         ImGui::Checkbox("Draw Sensors", &this->drawSensors);
         ImGui::ColorEdit3("Sensor Colour", this->sensorColour);
         ImGui::End();
@@ -229,22 +253,38 @@ public:
             this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
         }
 
+        if(!arryCmp(this->mainAgentColour_inShader, this->mainAgentColour, 3)){
+            for(int i = 0; i < 3; i++){
+                this->mainAgentColour_inShader[i] = this->mainAgentColour[i];
+            }
+            this->computeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
+        }
+
+        if(!arryCmp(this->agentXDirectionColour_inShader, this->agentXDirectionColour, 3)){
+            for(int i = 0; i < 3; i++){
+                this->agentXDirectionColour_inShader[i] = this->agentXDirectionColour[i];
+            }
+            this->computeShader.setUniform3f("agentXDirectionColour", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
+        }
+
+        if(!arryCmp(this->agentYDirectionColour_inShader, this->agentYDirectionColour, 3)){
+            for(int i = 0; i < 3; i++){
+                this->agentYDirectionColour_inShader[i] = this->agentYDirectionColour[i];
+            }
+            this->computeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
+        }
+        
         if(this->drawSensors_inShader != this->drawSensors){
             this->drawSensors_inShader = this->drawSensors;
             this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
         }
-
-        bool sensorColourChanged = false;
-        for(int i = 0; i < 3; i++){
-            if(this->sensorColour_inShader[i] != this->sensorColour[i]){
+        
+        if(!arryCmp(this->sensorColour_inShader, this->sensorColour, 3)){
+            for(int i = 0; i < 3; i++){
                 this->sensorColour_inShader[i] = this->sensorColour[i];
-                sensorColourChanged = true;
             }
-        }
-        if(sensorColourChanged){
             this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
         }
-        
 
         this->shader.use();
 

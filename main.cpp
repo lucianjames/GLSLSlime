@@ -64,7 +64,7 @@ int main(){
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(0, 260), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(0, 310), ImGuiCond_Once);
         ImGui::Begin("Performance");
         ImGui::Text("Last frame took %f ms", lastFrameMicros / 1000.0);
         ImGui::Text("FPS: %f", 1000000.0 / lastFrameMicros);
