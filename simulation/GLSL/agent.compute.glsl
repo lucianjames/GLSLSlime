@@ -21,6 +21,16 @@ vec4 getPixel(float angle, float dist, uint agentID){
 	return imageLoad(img, intLoc);
 }
 
+ivec2 getPixelCoords(float angle, float dist, uint agentID){
+    vec2 location = vec2(data[agentID].x, data[agentID].y) + vec2(cos(angle), sin(angle))*dist;
+	ivec2 intLoc = ivec2(int(location[0]), int(location[1]));
+	if (intLoc[0] >= size){ intLoc[0] -= size-1; }
+	if (intLoc[0] <= 0){ intLoc [0] += size+1; }	
+	if (intLoc[1] >= size){ intLoc[1] -= size-1; }
+	if (intLoc[1] <= 0){ intLoc[1] += size+1; }
+    return intLoc;
+}
+
 void loopBounds(inout vec2 pos){
 	if(pos[0] >= size){ pos[0] -= size; }
 	if(pos[1] >= size){ pos[1] -= size; }
@@ -34,6 +44,10 @@ void main(){
     float rightSensor = getPixel(data[agentID].z-sensorAngle, sensorDistance, agentID).w;
     data[agentID].z += leftSensor*turnSpeed;
     data[agentID].z -= rightSensor*turnSpeed;
+
+    // Draw a pixel at the sensors locations
+    imageStore(img, getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID), vec4(0.6f, 0.0f, 0.5f, 0.3f));
+    imageStore(img, getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID), vec4(0.6f, 0.0f, 0.5f, 0.3f));
 
     // Update location of agent
     vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));

@@ -33,7 +33,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height){
 class main{
 private:
     int widthHeightResolution = 2048;
-    int agentCount = 50000000;
+    int agentCount = 5000000;
 
     float offsetX = 0;
     float offsetY = 0;
@@ -167,9 +167,9 @@ public:
         ImGui::SliderFloat("Offset X", &offsetX, -2, 2);
         ImGui::SliderFloat("Offset Y", &offsetY, -2, 2);
         ImGui::SliderFloat("Zoom Multiplier", &zoomMultiplier, 0, 10);
-        ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 100);
-        ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 2);
-        ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 10);
+        ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 300);
+        ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 3.1416);
+        ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 20);
         ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
         ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
         ImGui::End();
