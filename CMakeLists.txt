@@ -1,11 +1,13 @@
 include(FetchContent)
 cmake_minimum_required(VERSION 3.8)
 
-
 project(GLSLSlime)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_BUILD_TYPE Debug)
 
+if(UNIX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+endif()
 
 # This is a really nice and easy way to include all the openGL stuff i need
 set(BUILD_SHARED_LIBS OFF)
@@ -15,9 +17,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui-glfw-glad-glm)
 
-
-# Add all the .cpp files in ./headers/
-file(GLOB_RECURSE HEADERS "headers/*.cpp")
 add_executable(GLSLSlime main.cpp ${HEADERS})
 target_link_libraries(
         GLSLSlime
