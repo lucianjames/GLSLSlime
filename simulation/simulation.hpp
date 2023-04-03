@@ -1,6 +1,7 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <random>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -31,18 +32,18 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height){
 
 class main{
 private:
-    int widthHeightResolution = 128;
-    int agentCount = 10;
+    int widthHeightResolution = 2048;
+    int agentCount = 1000;
 
     float offsetX = 0;
     float offsetY = 0;
     float zoomMultiplier = 1;
 
-    float sensorDistance = 10;
-    float sensorAngle = 1;
-    float turnSpeed = 1;
-    float pixelMultiplier = 0.2;
-    float newPixelMultiplier = 0.8;
+    float sensorDistance = 60;
+    float sensorAngle = 1.5;
+    float turnSpeed = 2;
+    float pixelMultiplier = 0.1;
+    float newPixelMultiplier = 0.89;
 
     float offsetX_inShader = offsetX;
     float offsetY_inShader = offsetY;
@@ -83,6 +84,7 @@ private:
         float xPos = 0;
         float yPos = 0;
         float angle = 0;
+        float compatibility = 1234; // Struct layouts are stupid
     };
     std::vector<testComputeShaderStruct> computeShaderData;
     openGLComponents::SSBO SSBO; // Above vector will be stored in this SSBO
@@ -129,26 +131,29 @@ public:
         this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
         this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
 
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0, 1);
         // Fill the computeShaderData vector with data
         for(int i = 0; i < this->agentCount; i++){
             testComputeShaderStruct temp;
-            temp.xPos = 128;
-            temp.yPos = 128;
-            temp.angle = rand() % 360;
+            // Pick random x and y inside 100 pixel radius of the center of the grid with size this->widthHeightResolution
+            // Use the generator to get a random number between 0 and 1
+            temp.xPos = (dis(gen) - 0.5f) * 100.0f + this->widthHeightResolution / 2;
+            temp.yPos = (dis(gen) - 0.5f) * 100.0f + this->widthHeightResolution / 2;
+            temp.angle = (rand() % 100000000) / 100000000.0f * 2 * 3.14159265359f;
             this->computeShaderData.push_back(temp);
+            std::cout << this->computeShaderData.back().xPos << " " << this->computeShaderData.back().yPos << " " << this->computeShaderData.back().angle << std::endl;
         }
-        this->SSBO.generate((void*)this->computeShaderData.data(), this->computeShaderData.size() * sizeof(testComputeShaderStruct));
+        this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
+        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
     }
     
     void render(){
         this->texture.bind();
-        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
-        this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
-        
-        // Artificial delay for testing
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        
+        //this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        //this->computeShader.execute(this->computeShaderData.size(), 1, 1);
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);

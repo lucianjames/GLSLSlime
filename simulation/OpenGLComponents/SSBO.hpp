@@ -10,13 +10,14 @@ namespace openGLComponents{
             bool bufferCreated = false;
         
         public:
-            void generate(const void* data, unsigned int size){
+            template<typename T>
+            void generate(std::vector<T>& data){
                 if(bufferCreated){
                     GLCall(glDeleteBuffers(1, &ID));
                 }
                 GLCall(glGenBuffers(1, &ID));
                 GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID));
-                GLCall(glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_COPY));
+                GLCall(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * data.size(), data.data(), GL_DYNAMIC_COPY));
                 bufferCreated = true;	
             }
 
