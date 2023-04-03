@@ -16,8 +16,8 @@
 
 namespace simulation{
     namespace winGlobals{
-        const int windowStartWidth = 1024;
-        const int windowStartHeight = 1024;
+        const int windowStartWidth = 1920;
+        const int windowStartHeight = 1080;
         int currentWidth = windowStartWidth;
         int currentHeight = windowStartHeight;
         int newWidth = windowStartWidth;
@@ -25,13 +25,14 @@ namespace simulation{
     }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height){
-    GLCall(glViewport(0, 0, width, height));
     winGlobals::newWidth = width;
     winGlobals::newHeight = height;
+    GLCall(glViewport(0, 0, width, height));
 }
 
 class main{
 private:
+    float textureRatio = (float)winGlobals::windowStartWidth/winGlobals::windowStartHeight;
     int widthHeightResolution = 2048;
     int agentCount = 5000000;
 
@@ -56,7 +57,6 @@ private:
     float newPixelMultiplier_inShader = newPixelMultiplier;
 
     // More important stuff
-    float textureRatio = 1.0f; // Used to ensure that the texture is always square regardless of the window size
 
     // The quad which the simulation is rendered to
     std::vector<float> quadVertices = {
@@ -153,14 +153,14 @@ public:
         ImGui::SetNextWindowSize(ImVec2(600, 240), ImGuiCond_Once);
         ImGui::Begin("Simulation Settings");
         //ImGui::SliderInt("Width/Height Resolution", &widthHeightResolution, 0, 8192);
-        ImGui::SliderFloat("Offset X", &offsetX, -2, 2);
-        ImGui::SliderFloat("Offset Y", &offsetY, -2, 2);
-        ImGui::SliderFloat("Zoom Multiplier", &zoomMultiplier, 0, 10);
-        ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 300);
-        ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 3.1416);
-        ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 20);
-        ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
-        ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
+        ImGui::SliderFloat("Offset X", &this->offsetX, -2, 2);
+        ImGui::SliderFloat("Offset Y", &this->offsetY, -2, 2);
+        ImGui::SliderFloat("Zoom Multiplier", &this->zoomMultiplier, 0, 10);
+        ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
+        ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
+        ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
+        ImGui::SliderFloat("Pixel Multiplier", &this->pixelMultiplier, 0, 1);
+        ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
         ImGui::End();
 
         /*
@@ -219,11 +219,11 @@ public:
 
         if(winGlobals::currentHeight != winGlobals::newHeight
         || winGlobals::currentWidth != winGlobals::newWidth){
-            this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             winGlobals::currentHeight = winGlobals::newHeight;
             winGlobals::currentWidth = winGlobals::newWidth;
+            this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             this->shader.use();
-            this->shader.setUniform1f("textureRatio", textureRatio);
+            this->shader.setUniform1f("textureRatio", this->textureRatio);
         }
     }
 
