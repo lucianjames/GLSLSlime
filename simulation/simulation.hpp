@@ -147,13 +147,12 @@ public:
         }
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
-        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
     }
     
     void render(){
         this->texture.bind();
-        //this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
-        //this->computeShader.execute(this->computeShaderData.size(), 1, 1);
+        this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);

@@ -30,22 +30,22 @@ void loopBounds(inout vec2 pos){
 
 void main(){
     uint agentID = gl_GlobalInvocationID.x;
-//    float leftSensor = getPixel(data[agentID].z+sensorAngle, sensorDistance, agentID).w; // Uses alpha channel
-//    float rightSensor = getPixel(data[agentID].z-sensorAngle, sensorDistance, agentID).w;
-//    data[agentID].z += leftSensor*turnSpeed;
-//    data[agentID].z -= rightSensor*turnSpeed;
-//
-//    // Update location of agent
-//    vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));
-//    vec2 newpos = vec2(data[agentID].x, data[agentID].y) + (direction);
-//
-//    loopBounds(newpos);
-//
-//    // Set agent position
-//    data[agentID].x = newpos[0];
-//    data[agentID].y = newpos[1];
-//
-//    // Draw a pixel at the agents location
-//    
-    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(0.0f, 1.0f, 0.0f, 1.0f));
+    float leftSensor = getPixel(data[agentID].z+sensorAngle, sensorDistance, agentID).w; // Uses alpha channel
+    float rightSensor = getPixel(data[agentID].z-sensorAngle, sensorDistance, agentID).w;
+    data[agentID].z += leftSensor*turnSpeed;
+    data[agentID].z -= rightSensor*turnSpeed;
+
+    // Update location of agent
+    vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));
+    vec2 newpos = vec2(data[agentID].x, data[agentID].y) + (direction);
+
+    loopBounds(newpos);
+
+    // Set agent position
+    data[agentID].x = newpos[0];
+    data[agentID].y = newpos[1];
+
+    // Draw a pixel at the agents location
+    
+    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(0.0f, 1.0f, (direction[1]+1)/2, 1.0f));
 }
