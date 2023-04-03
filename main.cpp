@@ -12,6 +12,9 @@
 #include "misc/debugMessageCallback.hpp"
 #include "simulation/simulation.hpp"
 
+#define N_AGENTS 1000000
+#define TEXTURE_SIZE 3000
+
 int main(){
     /*
         ===== GLFW/GLAD/IMGUI setup
@@ -44,18 +47,30 @@ int main(){
     /*
         ===== Simulation setup
     */
-    simulation::main sim;
+    simulation::main sim(N_AGENTS, TEXTURE_SIZE);
+    sim.setup();
 
     /*
         ===== Main loop
     */
+    // Variables for performance tracking
+    double lastFrameMicros = 0;
     while(!glfwWindowShouldClose(window)){
+        auto start = std::chrono::high_resolution_clock::now();
         // ===== Process input and start a new imgui frame
         glfwPollEvents();
         if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){ glfwSetWindowShouldClose(window, true); }
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        ImGui::SetNextWindowPos(ImVec2(0, 260), ImGuiCond_Once);
+        ImGui::Begin("Performance");
+        ImGui::Text("Last frame took %f ms", lastFrameMicros / 1000.0);
+        ImGui::Text("FPS: %f", 1000000.0 / lastFrameMicros);
+        ImGui::Text("Agents: %d", N_AGENTS);
+        ImGui::Text("Texture size: %d. (Total %d pixels)", TEXTURE_SIZE, TEXTURE_SIZE * TEXTURE_SIZE);
+        ImGui::End();
 
         // ===== Draw imgui window, update+render simulation
         sim.update();
@@ -67,6 +82,8 @@ int main(){
         glfwSwapBuffers(window);
         GLCall(glClear(GL_COLOR_BUFFER_BIT));
         std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Not sure why this is here but someone clearly added it for a reason so ill keep it lol
+        auto end = std::chrono::high_resolution_clock::now();
+        lastFrameMicros = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
 
     /*

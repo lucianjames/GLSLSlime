@@ -59,8 +59,8 @@ namespace simulation{
 class main{
 private:
     float textureRatio = (float)winGlobals::windowStartWidth/winGlobals::windowStartHeight;
-    int widthHeightResolution = 2048;
-    int agentCount = 5000000;
+    int widthHeightResolution;
+    int agentCount;
 
     float offsetX = 0;
     float offsetY = 0;
@@ -81,8 +81,6 @@ private:
     float turnSpeed_inShader = turnSpeed;
     float pixelMultiplier_inShader = pixelMultiplier;
     float newPixelMultiplier_inShader = newPixelMultiplier;
-
-    // More important stuff
 
     // The quad which the simulation is rendered to
     std::vector<float> quadVertices = {
@@ -136,7 +134,13 @@ private:
     }
 
 public:
-    main(){
+    main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
+        this->agentCount = n_agents;
+        this->widthHeightResolution = n_widthHeightResolution;
+        this->generateAgents();
+    }
+    
+    void setup(){
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
@@ -164,7 +168,7 @@ public:
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
     }
-    
+
     void render(){
         this->texture.bind();
         this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
@@ -177,7 +181,7 @@ public:
     void update(){
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
         ImGui::SetNextWindowSize(ImVec2(600, 240), ImGuiCond_Once);
-        ImGui::Begin("Simulation Settings");
+        ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
