@@ -33,7 +33,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height){
 class main{
 private:
     int widthHeightResolution = 2048;
-    int agentCount = 1000000;
+    int agentCount = 50000000;
 
     float offsetX = 0;
     float offsetY = 0;
@@ -167,11 +167,11 @@ public:
         ImGui::SliderFloat("Offset X", &offsetX, -2, 2);
         ImGui::SliderFloat("Offset Y", &offsetY, -2, 2);
         ImGui::SliderFloat("Zoom Multiplier", &zoomMultiplier, 0, 10);
-        //ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 100);
-        //ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 2);
-        //ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 10);
-        //ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
-        //ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
+        ImGui::SliderFloat("Sensor Distance", &sensorDistance, 0, 100);
+        ImGui::SliderFloat("Sensor Angle", &sensorAngle, 0, 2);
+        ImGui::SliderFloat("Turn Speed", &turnSpeed, 0, 10);
+        ImGui::SliderFloat("Pixel Multiplier", &pixelMultiplier, 0, 1);
+        ImGui::SliderFloat("New Pixel Multiplier", &newPixelMultiplier, 0, 1);
         ImGui::End();
 
         /*
@@ -194,6 +194,36 @@ public:
             this->zoomMultiplier_inShader = this->zoomMultiplier;
             this->shader.use();
             this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
+        }
+
+        if(this->sensorDistance_inShader != this->sensorDistance){
+            this->sensorDistance_inShader = this->sensorDistance;
+            this->computeShader.use();
+            this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
+        }
+
+        if(this->sensorAngle_inShader != this->sensorAngle){
+            this->sensorAngle_inShader = this->sensorAngle;
+            this->computeShader.use();
+            this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
+        }
+
+        if(this->turnSpeed_inShader != this->turnSpeed){
+            this->turnSpeed_inShader = this->turnSpeed;
+            this->computeShader.use();
+            this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
+        }
+
+        if(this->pixelMultiplier_inShader != this->pixelMultiplier){
+            this->pixelMultiplier_inShader = this->pixelMultiplier;
+            this->diffuseFadeShader.use();
+            this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
+        }
+
+        if(this->newPixelMultiplier_inShader != this->newPixelMultiplier){
+            this->newPixelMultiplier_inShader = this->newPixelMultiplier;
+            this->diffuseFadeShader.use();
+            this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
         }
 
         // ... Rest are TODO once they actually do something
