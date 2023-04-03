@@ -153,6 +153,14 @@ private:
         return true;
     }
 
+    void checkSet1f(const char* name, float& value, float& value_inShader, openGLComponents::computeShader& shader){
+        this->shader.use();
+        if(value != value_inShader){
+            shader.setUniform1f(name, value);
+            value_inShader = value;
+        }
+    }
+
 public:
     main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
         this->agentCount = n_agents;
@@ -231,33 +239,12 @@ public:
         ImGui::Checkbox("Draw Sensors", &this->drawSensors);
         ImGui::ColorEdit3("Sensor Colour", this->sensorColour);
         ImGui::End();
-
-        this->computeShader.use();
-
-        if(this->sensorDistance_inShader != this->sensorDistance){
-            this->sensorDistance_inShader = this->sensorDistance;
-            this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
-        }
-
-        if(this->sensorAngle_inShader != this->sensorAngle){
-            this->sensorAngle_inShader = this->sensorAngle;
-            this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
-        }
-
-        if(this->turnSpeed_inShader != this->turnSpeed){
-            this->turnSpeed_inShader = this->turnSpeed;
-            this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
-        }
-
-        if(this->pixelMultiplier_inShader != this->pixelMultiplier){
-            this->pixelMultiplier_inShader = this->pixelMultiplier;
-            this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
-        }
-
-        if(this->newPixelMultiplier_inShader != this->newPixelMultiplier){
-            this->newPixelMultiplier_inShader = this->newPixelMultiplier;
-            this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
-        }
+                
+        this->checkSet1f("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->computeShader);
+        this->checkSet1f("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->computeShader);
+        this->checkSet1f("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->computeShader);
+        this->checkSet1f("pixelMultiplier", this->pixelMultiplier, this->pixelMultiplier_inShader, this->diffuseFadeShader);
+        this->checkSet1f("newPixelMultiplier", this->newPixelMultiplier, this->newPixelMultiplier_inShader, this->diffuseFadeShader);
 
         if(!arryCmp(this->mainAgentColour_inShader, this->mainAgentColour, 3)){
             for(int i = 0; i < 3; i++){
