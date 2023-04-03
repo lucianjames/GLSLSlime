@@ -71,6 +71,8 @@ private:
     float turnSpeed = 2;
     float pixelMultiplier = 0.1;
     float newPixelMultiplier = 0.89;
+    bool drawSensors = false;
+    float* sensorColour = new float[3]{0.4f, 0.3f, 0.7f};
 
     float offsetX_inShader = offsetX;
     float offsetY_inShader = offsetY;
@@ -81,6 +83,8 @@ private:
     float turnSpeed_inShader = turnSpeed;
     float pixelMultiplier_inShader = pixelMultiplier;
     float newPixelMultiplier_inShader = newPixelMultiplier;
+    bool drawSensors_inShader = drawSensors;
+    float sensorColour_inShader[3] = {0.4f, 0.3f, 0.7f};
 
     // The quad which the simulation is rendered to
     std::vector<float> quadVertices = {
@@ -139,6 +143,11 @@ public:
         this->widthHeightResolution = n_widthHeightResolution;
         this->generateAgents();
     }
+
+    ~main(){
+        delete[] this->sensorColour;
+        delete[] this->sensorColour_inShader;
+    }
     
     void setup(){
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
@@ -159,6 +168,8 @@ public:
         this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
         this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
         this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
+        this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
+        this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution);
@@ -187,44 +198,61 @@ public:
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
         ImGui::SliderFloat("Pixel Multiplier", &this->pixelMultiplier, 0, 1);
         ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
+        ImGui::Checkbox("Draw Sensors", &this->drawSensors);
+        ImGui::ColorEdit3("Sensor Colour", this->sensorColour);
         ImGui::End();
+
+        this->computeShader.use();
 
         if(this->sensorDistance_inShader != this->sensorDistance){
             this->sensorDistance_inShader = this->sensorDistance;
-            this->computeShader.use();
             this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
         }
 
         if(this->sensorAngle_inShader != this->sensorAngle){
             this->sensorAngle_inShader = this->sensorAngle;
-            this->computeShader.use();
             this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
         }
 
         if(this->turnSpeed_inShader != this->turnSpeed){
             this->turnSpeed_inShader = this->turnSpeed;
-            this->computeShader.use();
             this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
         }
 
         if(this->pixelMultiplier_inShader != this->pixelMultiplier){
             this->pixelMultiplier_inShader = this->pixelMultiplier;
-            this->diffuseFadeShader.use();
             this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
         }
 
         if(this->newPixelMultiplier_inShader != this->newPixelMultiplier){
             this->newPixelMultiplier_inShader = this->newPixelMultiplier;
-            this->diffuseFadeShader.use();
             this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
         }
+
+        if(this->drawSensors_inShader != this->drawSensors){
+            this->drawSensors_inShader = this->drawSensors;
+            this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
+        }
+
+        bool sensorColourChanged = false;
+        for(int i = 0; i < 3; i++){
+            if(this->sensorColour_inShader[i] != this->sensorColour[i]){
+                this->sensorColour_inShader[i] = this->sensorColour[i];
+                sensorColourChanged = true;
+            }
+        }
+        if(sensorColourChanged){
+            this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
+        }
+        
+
+        this->shader.use();
 
         if(winGlobals::currentHeight != winGlobals::newHeight
         || winGlobals::currentWidth != winGlobals::newWidth){
             winGlobals::currentHeight = winGlobals::newHeight;
             winGlobals::currentWidth = winGlobals::newWidth;
             this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
-            this->shader.use();
             this->shader.setUniform1f("textureRatio", this->textureRatio);
             
         }
@@ -233,7 +261,6 @@ public:
             this->zoomMultiplier -= (controlGlobals::scrollYOffset / 40.0f) * this->zoomMultiplier*5;
             this->zoomMultiplier = (this->zoomMultiplier < 0)? 0 : this->zoomMultiplier;
             controlGlobals::scrollYOffset = 0;
-            this->shader.use();
             this->zoomMultiplier_inShader = this->zoomMultiplier;
             this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
         }
@@ -246,7 +273,6 @@ public:
             controlGlobals::rmbClicked = false;
             controlGlobals::prevMouseClickXPos = controlGlobals::mouseClickXPos;
             controlGlobals::prevMouseClickYPos = controlGlobals::mouseClickYPos;
-            this->shader.use();
             this->offsetX_inShader = this->offsetX;
             this->shader.setUniform1f("offsetX", this->offsetX_inShader);
             this->offsetY_inShader = this->offsetY;

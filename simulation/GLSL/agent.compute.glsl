@@ -2,10 +2,12 @@
 
 layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img;
-layout(location = 3) uniform int size;
-layout(location = 4) uniform float sensorDistance;
-layout(location = 5) uniform float sensorAngle;
-layout(location = 6) uniform float turnSpeed;
+uniform int size;
+uniform float sensorDistance;
+uniform float sensorAngle;
+uniform float turnSpeed;
+uniform int drawSensors;
+uniform vec3 sensorColour;
 
 layout (std140, binding=2) buffer agentData{
     vec3 data[];
@@ -46,8 +48,10 @@ void main(){
     data[agentID].z -= rightSensor*turnSpeed;
 
     // Draw a pixel at the sensors locations
-    imageStore(img, getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID), vec4(0.6f, 0.0f, 0.5f, 0.3f));
-    imageStore(img, getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID), vec4(0.6f, 0.0f, 0.5f, 0.3f));
+    if(drawSensors == 1){
+        imageStore(img, getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID), vec4(sensorColour, 0.0f));
+        imageStore(img, getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID), vec4(sensorColour, 0.0f));
+    }
 
     // Update location of agent
     vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));
