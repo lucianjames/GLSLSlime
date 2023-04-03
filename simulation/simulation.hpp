@@ -80,7 +80,7 @@ private:
     openGLComponents::simulationTexture texture;
 
     openGLComponents::computeShader computeShader;
-    struct testComputeShaderStruct{
+    struct computeShaderStruct{
         float xPos = 0;
         float yPos = 0;
         float angle = 0;
@@ -88,39 +88,41 @@ private:
         // Basically, NEVER EVER create a layout (std140, std430, whatever) that holds a vec3
         // It just wont work as expected
     };
-    std::vector<testComputeShaderStruct> computeShaderData;
+    std::vector<computeShaderStruct> computeShaderData;
     openGLComponents::SSBO SSBO; // Above vector will be stored in this SSBO
 
     openGLComponents::computeShader diffuseFadeShader;
+    
+    void generateAgents(){
+        this->computeShaderData.clear();
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0, 1);
+        // Fill the computeShaderData vector with data
+        for(int i = 0; i < this->agentCount; i++){
+            computeShaderStruct temp;
+            // Pick random x and y inside 100 pixel radius of the center of the grid with size this->widthHeightResolution
+            temp.xPos = dis(gen) * this->widthHeightResolution;
+            temp.yPos = dis(gen) * this->widthHeightResolution;
+            temp.angle = dis(gen) * 2 * 3.14159265359;
+            this->computeShaderData.push_back(temp);
+        }
+    }
 
 public:
     main(){
+        this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
+        this->layout.pushFloat(3);
+        this->layout.pushFloat(2);
+        this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
         this->texture.init(this->widthHeightResolution);
         this->texture.bind();
-
-        /*
-        float* data = new float[textureResolution * textureResolution * 4]; // RGBA = 4
-        for(int i = 0; i < textureResolution * textureResolution * 4; i+=4){
-            data[i] = 1.0f;
-            data[i + 1] = i / 4 % textureResolution / (float)textureResolution;
-            data[i + 2] = i / 4 / textureResolution / (float)textureResolution;
-            data[i + 3] = 1.0f;
-        }
-        this->texture.update(data);
-        delete[] data;
-        */
-
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
         this->shader.setUniform1f("textureRatio", this->textureRatio);
         this->shader.setUniform1f("offsetX", this->offsetX_inShader);
         this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
-        this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
-        this->layout.pushFloat(3);
-        this->layout.pushFloat(2);
-        this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
-        
         this->computeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
         this->computeShader.use();
         this->computeShader.setUniform1i("size", this->widthHeightResolution);
@@ -132,20 +134,7 @@ public:
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution);
         this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
         this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
-
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(0, 1);
-        // Fill the computeShaderData vector with data
-        for(int i = 0; i < this->agentCount; i++){
-            testComputeShaderStruct temp;
-            // Pick random x and y inside 100 pixel radius of the center of the grid with size this->widthHeightResolution
-            // Use the generator to get a random number between 0 and 1
-            temp.xPos = (dis(gen) - 0.5f) * 100.0f + this->widthHeightResolution / 2;
-            temp.yPos = (dis(gen) - 0.5f) * 100.0f + this->widthHeightResolution / 2;
-            temp.angle = (rand() % 100000000) / 100000000.0f * 2 * 3.14159265359f;
-            this->computeShaderData.push_back(temp);
-        }
+        this->generateAgents();
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
     }
