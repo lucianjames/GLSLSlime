@@ -41,16 +41,24 @@ void loopBounds(inout vec2 pos){
 
 void main(){
     uint agentID = gl_GlobalInvocationID.x;
-    float leftSensor = getPixel(data[agentID].z+sensorAngle, sensorDistance, agentID).w; // Uses alpha channel
-    float rightSensor = getPixel(data[agentID].z-sensorAngle, sensorDistance, agentID).w;
+
+    float leftSensor;
+    float rightSensor;
+    if(drawSensors == 1){
+        ivec2 pixelCoords_left = getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID);
+        ivec2 pixelCoords_right = getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID);
+        leftSensor = imageLoad(img, pixelCoords_left).w; // Uses alpha channel
+        rightSensor = imageLoad(img, pixelCoords_right).w;
+        imageStore(img, pixelCoords_left, vec4(sensorColour, leftSensor));
+        imageStore(img, pixelCoords_right, vec4(sensorColour, rightSensor));
+    }else{
+        rightSensor = getPixel(data[agentID].z-sensorAngle, sensorDistance, agentID).w;
+        leftSensor = getPixel(data[agentID].z+sensorAngle, sensorDistance, agentID).w; // Uses alpha channel
+    }
+
     data[agentID].z += leftSensor*turnSpeed;
     data[agentID].z -= rightSensor*turnSpeed;
 
-    // Draw a pixel at the sensors locations
-    if(drawSensors == 1){
-        imageStore(img, getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID), vec4(sensorColour, 0.0f));
-        imageStore(img, getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID), vec4(sensorColour, 0.0f));
-    }
 
     // Update location of agent
     vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));
