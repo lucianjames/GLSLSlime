@@ -253,7 +253,7 @@ public:
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 5);
-        ImGui::SliderFloat("Speed", &this->speed, 0, 10);
+        ImGui::SliderFloat("Speed", &this->speed, 0.01, 25);
         ImGui::SliderFloat("Diffuse", &this->diffuse, 0, 1);
         ImGui::SliderFloat("Fade", &this->fade, 0, 0.2);
         ImGui::Dummy(ImVec2(0, 10));
