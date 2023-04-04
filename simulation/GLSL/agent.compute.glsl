@@ -6,6 +6,7 @@ uniform int size;
 uniform float sensorDistance;
 uniform float sensorAngle;
 uniform float turnSpeed;
+uniform float speed;
 uniform int drawSensors;
 uniform vec3 sensorColour;
 uniform vec3 mainAgentColour;
@@ -61,7 +62,7 @@ void main(){
 
 
     // Update location of agent
-    vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z));
+    vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z))*speed;
     vec2 newpos = vec2(data[agentID].x, data[agentID].y) + (direction);
 
     loopBounds(newpos);
@@ -71,6 +72,6 @@ void main(){
     data[agentID].y = newpos[1];
 
     // Draw a pixel at the agents location
-    vec3 colour = (((direction.x+1)*agentXDirectionColour + ((direction.y+1)*agentYDirectionColour) + mainAgentColour))/1.5f;
+    vec3 colour = ((((direction.x/speed)+1)*agentXDirectionColour + (((direction.y/speed)+1)*agentYDirectionColour) + mainAgentColour))/1.5f;
     imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(colour, 1.0f));
 }

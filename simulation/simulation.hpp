@@ -73,6 +73,7 @@ private:
     float turnSpeed = 2;
     float diffuse = 0.7;
     float fade = 0.1;
+    float speed = 1;
     bool drawSensors = false;
     float* mainAgentColour = new float[3]{0.0f, 0.1f, 0.9f};
     float* agentXDirectionColour = new float[3]{0.0f, 0.7f, 0.2f};
@@ -88,6 +89,7 @@ private:
     float turnSpeed_inShader = turnSpeed;
     float diffuse_inShader = diffuse;
     float fade_inShader = fade;
+    float speed_inShader = speed;
     bool drawSensors_inShader = drawSensors;
     float mainAgentColour_inShader[3];
     float agentXDirectionColour_inShader[3];
@@ -205,6 +207,7 @@ public:
         this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
         this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
         this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
+        this->computeShader.setUniform1f("speed", this->speed_inShader);
         this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
         this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
         this->computeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
@@ -250,6 +253,7 @@ public:
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 5);
+        ImGui::SliderFloat("Speed", &this->speed, 0, 10);
         ImGui::SliderFloat("Diffuse", &this->diffuse, 0, 1);
         ImGui::SliderFloat("Fade", &this->fade, 0, 0.2);
         ImGui::Dummy(ImVec2(0, 10));
@@ -273,6 +277,7 @@ public:
         this->checkSet1f("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->computeShader);
         this->checkSet1f("diffuse", this->diffuse, this->diffuse_inShader, this->diffuseFadeShader);
         this->checkSet1f("fade", this->fade, this->fade_inShader, this->diffuseFadeShader);
+        this->checkSet1f("speed", this->speed, this->speed_inShader, this->computeShader);
 
         if(!arryCmp(this->mainAgentColour_inShader, this->mainAgentColour, 3)){
             for(int i = 0; i < 3; i++){
