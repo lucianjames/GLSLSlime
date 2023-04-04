@@ -12,8 +12,8 @@
 #include "misc/debugMessageCallback.hpp"
 #include "simulation/simulation.hpp"
 
-#define N_AGENTS 10000000
-#define TEXTURE_SIZE 2048
+#define N_AGENTS 10000
+#define TEXTURE_SIZE 1024
 #define F_WAIT 10
 
 int main(){
@@ -69,11 +69,9 @@ int main(){
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(0, 310), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(610, 0), ImGuiCond_Once);
         ImGui::Begin("Performance");
         ImGui::Text("FPS: %f", frameRate);
-        ImGui::Text("Agents: %d", N_AGENTS);
-        ImGui::Text("Texture size: %d. (Total %d pixels)", TEXTURE_SIZE, TEXTURE_SIZE * TEXTURE_SIZE);
         ImGui::End();
 
         // ===== Draw imgui window, update+render simulation

@@ -41,6 +41,11 @@ namespace openGLComponents{
                 this->res = res;
             }
 
+            void destroy(){
+                GLCall(glDeleteTextures(1, this->textures));
+                delete[] this->textures;
+            }
+            
             void bind(){
                 this->activebindtex(this->textures[0], 0, 0);
             }
@@ -50,6 +55,7 @@ namespace openGLComponents{
                 GLCall(glBindTexture(GL_TEXTURE_2D, this->textures[0]));
                 GLCall(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->res, this->res, GL_RGBA, GL_FLOAT, data));
             }
+            
 
     };
 

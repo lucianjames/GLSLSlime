@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <memory>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -60,6 +61,7 @@ class main{
 private:
     float textureRatio = (float)winGlobals::windowStartWidth/winGlobals::windowStartHeight;
     int widthHeightResolution;
+    int widthHeightResolution_current;
     int agentCount;
 
     float offsetX = 0;
@@ -128,6 +130,7 @@ private:
     openGLComponents::computeShader diffuseFadeShader;
     
     void generateAgents(){
+        std::cout << "Generating agents" << std::endl;
         this->computeShaderData.clear();
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -136,8 +139,8 @@ private:
         for(int i = 0; i < this->agentCount; i++){
             computeShaderStruct temp;
             // Pick random x and y inside 100 pixel radius of the center of the grid with size this->widthHeightResolution
-            temp.xPos = dis(gen) * this->widthHeightResolution;
-            temp.yPos = dis(gen) * this->widthHeightResolution;
+            temp.xPos = dis(gen) * this->widthHeightResolution_current;
+            temp.yPos = dis(gen) * this->widthHeightResolution_current;
             temp.angle = dis(gen) * 2 * 3.14159265359;
             this->computeShaderData.push_back(temp);
         }
@@ -186,7 +189,8 @@ public:
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
-        this->texture.init(this->widthHeightResolution);
+        this->widthHeightResolution_current = this->widthHeightResolution;
+        this->texture.init(this->widthHeightResolution_current);
         this->texture.bind();
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
@@ -196,7 +200,7 @@ public:
         this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
         this->computeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
         this->computeShader.use();
-        this->computeShader.setUniform1i("size", this->widthHeightResolution);
+        this->computeShader.setUniform1i("size", this->widthHeightResolution_current);
         this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
         this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
         this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
@@ -207,7 +211,7 @@ public:
         this->computeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
-        this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution);
+        this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
         this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
         this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
         this->generateAgents();
@@ -215,9 +219,29 @@ public:
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
     }
 
+    void restart(){
+        this->widthHeightResolution_current = this->widthHeightResolution;
+        // Create an array of floats, all of which are 0
+        // Size it at this->widthHeightResolution * this->widthHeightResolution * 4 (RGBA)
+        float* temp = new float[this->widthHeightResolution_current * this->widthHeightResolution_current * 4];
+        for(int i = 0; i < this->widthHeightResolution_current * this->widthHeightResolution_current * 4; i++){
+            temp[i] = 0;
+        }
+        this->texture.destroy();
+        this->texture.init(this->widthHeightResolution_current);
+        this->texture.update(temp); // Set the whole texture to black
+        this->generateAgents();
+        this->SSBO.generate(this->computeShaderData);
+        this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
+        this->diffuseFadeShader.use();
+        this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
+        this->computeShader.use();
+        this->computeShader.setUniform1i("size", this->widthHeightResolution_current);
+    }
+
     void render(){
         this->texture.bind();
-        this->diffuseFadeShader.execute(this->widthHeightResolution, this->widthHeightResolution, 1);
+        this->diffuseFadeShader.execute(this->widthHeightResolution_current, this->widthHeightResolution_current, 1);
         this->computeShader.execute(this->computeShaderData.size(), 1, 1);
         this->shader.use();
         this->vao.bind();
@@ -226,20 +250,29 @@ public:
 
     void update(){
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(600, 300), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Once);
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
         ImGui::SliderFloat("Pixel Multiplier", &this->pixelMultiplier, 0, 1);
         ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
+        ImGui::Dummy(ImVec2(0, 10));
         ImGui::ColorEdit3("Main Agent Colour", this->mainAgentColour);
         ImGui::ColorEdit3("Agent X Direction Colour", this->agentXDirectionColour);
         ImGui::ColorEdit3("Agent Y Direction Colour", this->agentYDirectionColour);
         ImGui::Checkbox("Draw Sensors", &this->drawSensors);
         ImGui::ColorEdit3("Sensor Colour", this->sensorColour);
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Text("Restart required for the following settings:");
+        ImGui::SliderInt("Agent Count", &this->agentCount, 0, 5000000);
+        ImGui::SliderInt("Texture Resolution", &this->widthHeightResolution, 0, 4096*2);
+        ImGui::Dummy(ImVec2(0, 10));
+        if(ImGui::Button("Restart")){
+            this->restart();
+        }
         ImGui::End();
-                
+
         this->checkSet1f("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->computeShader);
         this->checkSet1f("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->computeShader);
         this->checkSet1f("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->computeShader);

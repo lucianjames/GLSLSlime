@@ -10,6 +10,11 @@ namespace openGLComponents{
             bool bufferCreated = false;
         
         public:
+            /*
+                Create new SSBO from an std::vector
+                Automatically deletes buffer if called multiple times 
+                (no need to worry about manually destroying it)
+            */
             template<typename T>
             void generate(std::vector<T>& data){
                 if(bufferCreated){
