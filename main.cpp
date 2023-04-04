@@ -69,7 +69,7 @@ int main(){
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowPos(ImVec2(610, 0), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(610, 0), ImGuiCond_Always);
         ImGui::Begin("Performance");
         ImGui::Text("FPS: %f", frameRate);
         ImGui::End();

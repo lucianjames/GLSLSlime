@@ -247,8 +247,8 @@ public:
     }
 
     void update(){
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(600, 420), ImGuiCond_Always);
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
