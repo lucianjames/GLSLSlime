@@ -71,8 +71,8 @@ private:
     float sensorDistance = 60;
     float sensorAngle = 1.5;
     float turnSpeed = 2;
-    float pixelMultiplier = 0.1;
-    float newPixelMultiplier = 0.89;
+    float diffuse = 0.7;
+    float fade = 0.1;
     bool drawSensors = false;
     float* mainAgentColour = new float[3]{0.0f, 0.1f, 0.9f};
     float* agentXDirectionColour = new float[3]{0.0f, 0.7f, 0.2f};
@@ -86,8 +86,8 @@ private:
     float sensorDistance_inShader = sensorDistance;
     float sensorAngle_inShader = sensorAngle;
     float turnSpeed_inShader = turnSpeed;
-    float pixelMultiplier_inShader = pixelMultiplier;
-    float newPixelMultiplier_inShader = newPixelMultiplier;
+    float diffuse_inShader = diffuse;
+    float fade_inShader = fade;
     bool drawSensors_inShader = drawSensors;
     float mainAgentColour_inShader[3];
     float agentXDirectionColour_inShader[3];
@@ -212,8 +212,8 @@ public:
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
-        this->diffuseFadeShader.setUniform1f("pixelMultiplier", this->pixelMultiplier_inShader);
-        this->diffuseFadeShader.setUniform1f("newPixelMultiplier", this->newPixelMultiplier_inShader);
+        this->diffuseFadeShader.setUniform1f("diffuse", this->diffuse_inShader);
+        this->diffuseFadeShader.setUniform1f("fade", this->fade_inShader);
         this->generateAgents();
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
@@ -255,8 +255,8 @@ public:
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
         ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
-        ImGui::SliderFloat("Pixel Multiplier", &this->pixelMultiplier, 0, 1);
-        ImGui::SliderFloat("New Pixel Multiplier", &this->newPixelMultiplier, 0, 1);
+        ImGui::SliderFloat("Diffuse", &this->diffuse, 0, 1);
+        ImGui::SliderFloat("Fade", &this->fade, 0, 0.2);
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::ColorEdit3("Main Agent Colour", this->mainAgentColour);
         ImGui::ColorEdit3("Agent X Direction Colour", this->agentXDirectionColour);
@@ -276,8 +276,8 @@ public:
         this->checkSet1f("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->computeShader);
         this->checkSet1f("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->computeShader);
         this->checkSet1f("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->computeShader);
-        this->checkSet1f("pixelMultiplier", this->pixelMultiplier, this->pixelMultiplier_inShader, this->diffuseFadeShader);
-        this->checkSet1f("newPixelMultiplier", this->newPixelMultiplier, this->newPixelMultiplier_inShader, this->diffuseFadeShader);
+        this->checkSet1f("diffuse", this->diffuse, this->diffuse_inShader, this->diffuseFadeShader);
+        this->checkSet1f("fade", this->fade, this->fade_inShader, this->diffuseFadeShader);
 
         if(!arryCmp(this->mainAgentColour_inShader, this->mainAgentColour, 3)){
             for(int i = 0; i < 3; i++){
