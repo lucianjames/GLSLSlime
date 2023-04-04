@@ -41,6 +41,10 @@ namespace openGLComponents{
                 this->res = res;
             }
 
+            void clear(){
+                GLCall(glClearTexImage(this->textures[0], 0, GL_RGBA, GL_FLOAT, NULL));
+            }
+
             void destroy(){
                 GLCall(glDeleteTextures(1, this->textures));
                 delete[] this->textures;

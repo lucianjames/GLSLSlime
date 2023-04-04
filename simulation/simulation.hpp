@@ -191,6 +191,7 @@ public:
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
         this->widthHeightResolution_current = this->widthHeightResolution;
         this->texture.init(this->widthHeightResolution_current);
+        this->texture.clear();
         this->texture.bind();
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
@@ -221,15 +222,9 @@ public:
 
     void restart(){
         this->widthHeightResolution_current = this->widthHeightResolution;
-        // Create an array of floats, all of which are 0
-        // Size it at this->widthHeightResolution * this->widthHeightResolution * 4 (RGBA)
-        float* temp = new float[this->widthHeightResolution_current * this->widthHeightResolution_current * 4];
-        for(int i = 0; i < this->widthHeightResolution_current * this->widthHeightResolution_current * 4; i++){
-            temp[i] = 0;
-        }
         this->texture.destroy();
         this->texture.init(this->widthHeightResolution_current);
-        this->texture.update(temp); // Set the whole texture to black
+        this->texture.clear();
         this->generateAgents();
         this->SSBO.generate(this->computeShaderData);
         this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
@@ -254,7 +249,7 @@ public:
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
-        ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 20);
+        ImGui::SliderFloat("Turn Speed", &this->turnSpeed, 0, 5);
         ImGui::SliderFloat("Diffuse", &this->diffuse, 0, 1);
         ImGui::SliderFloat("Fade", &this->fade, 0, 0.2);
         ImGui::Dummy(ImVec2(0, 10));
