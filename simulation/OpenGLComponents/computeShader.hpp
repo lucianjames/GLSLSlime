@@ -24,37 +24,35 @@ class computeShader{
                 cShaderFile.close();
                 cShaderCodeStr = cShaderStream.str();
             }catch(std::ifstream::failure e){
-                std::cout << "ERROR::COMPUTE_SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+                std::cout << "ERROR::COMPUTE_SHADER::FILE_NOT_SUCCESSFULLY_READ::" << cShaderPath << std::endl;
             }
             const char* cShaderCode = cShaderCodeStr.c_str();
             int success;
             char infoLog[512];
-            // Create compute shader program
+            // Create compute shader program:
             unsigned int computeShader = glCreateShader(GL_COMPUTE_SHADER);
             GLCall(glShaderSource(computeShader, 1, &cShaderCode, NULL));
             GLCall(glCompileShader(computeShader));
-            // Print compiling errors if any
+            // Print compiling errors if any:
             int result;
             glGetShaderiv(computeShader, GL_COMPILE_STATUS, &result);
             if (result == GL_FALSE) {
                 char info[1024];
                 GLCall(glGetShaderInfoLog(computeShader, 1024, NULL, info));
-                std::cout << "Failed to compile shader\n" << info << std::endl;
+                std::cout << "Failed to compile shader " << cShaderPath << "\n" << info << std::endl;
                 GLCall(glDeleteShader(computeShader));
             }
             // Create program:
             this->ID = glCreateProgram();
             GLCall(glAttachShader(this->ID, computeShader));
             GLCall(glLinkProgram(this->ID));
-            // Print linking errors if any
+            // Print linking errors if any:
             GLCall(glGetProgramiv(this->ID, GL_LINK_STATUS, &success));
             if (!success){
                 GLCall(glGetProgramInfoLog(this->ID, 512, NULL, infoLog));
-                std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-
-                std::cout << cShaderCode << std::endl;
+                std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED::" << cShaderPath << "\n" << infoLog << std::endl;
             }
-            // Shader isnt needed after its linked to a program
+            // Shader isnt needed after its linked to a program:
             GLCall(glDeleteShader(computeShader));
         }
 

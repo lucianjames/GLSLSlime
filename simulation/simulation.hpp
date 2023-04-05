@@ -39,6 +39,9 @@ namespace simulation{
         bool rmbClicked = false;
     }
 
+    /*
+        These callbacks are set in main
+    */
     namespace callbacks{
         void framebufferSizeCallback(GLFWwindow* window, int width, int height){
             winGlobals::newWidth = width;
@@ -389,10 +392,10 @@ public:
             winGlobals::currentWidth = winGlobals::newWidth;
             this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             this->shader.setUniform1f("textureRatio", this->textureRatio);
-            
         }
-    }
 
+    }
+    
 };
 
 }
