@@ -12,14 +12,14 @@
 #include "misc/debugMessageCallback.hpp"
 #include "simulation/simulation.hpp"
 
-#define N_AGENTS 10000
+#define N_AGENTS 100000
 #define TEXTURE_SIZE 1024
 #define F_WAIT 10
+#define DEBUG true
 
 int main(){
     /*
         ===== GLFW/GLAD/IMGUI setup
-        will probably move this into some function later
     */
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -37,7 +37,10 @@ int main(){
     if(!gladLoaderLoadGL()){
         throw std::runtime_error("Error initializing glad");
     }
-    GLCall(glDebugMessageCallback(debug::messageCallback, nullptr));
+    if(DEBUG){
+        GLCall(glEnable(GL_DEBUG_OUTPUT));
+        GLCall(glDebugMessageCallback(debug::messageCallback, nullptr));
+    }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -86,12 +89,11 @@ int main(){
         std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Not sure why this is here but someone clearly added it for a reason so ill keep it lol
         end = std::chrono::high_resolution_clock::now();
         frameTime += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        if(f == 10){
+        if(f++ == 10){
             frameRate = 1000000.0 / (frameTime / 10.0);
             frameTime = 0;
             f = 0;
         }
-        f++;
     }
 
     /*

@@ -15,6 +15,10 @@ uniform vec3 agentXDirectionColour;
 
 layout (std140, binding=2) buffer agentData{
     vec3 data[];
+    // x = x position
+    // y = y position
+    // z = angle
+    // Also pad the data to make it a vec4 when you send it to this shader
 };
 
 ivec2 getPixelCoords(float angle, float dist, uint agentID){
@@ -59,7 +63,7 @@ void main(){
 
     data[agentID].z += leftSensor*turnSpeed;
     data[agentID].z -= rightSensor*turnSpeed;
-
+    // I should probably make it so that the angle gets looped around to ensure no floating point problems
 
     // Update location of agent
     vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z))*speed;

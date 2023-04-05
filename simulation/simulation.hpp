@@ -1,8 +1,5 @@
 #include <vector>
-#include <chrono>
-#include <thread>
 #include <random>
-#include <memory>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -16,6 +13,10 @@
 #include "OpenGLComponents/SSBO.hpp"
 
 namespace simulation{
+
+    /*
+        Global variables for managing window size updates
+    */
     namespace winGlobals{
         const int windowStartWidth = 1920;
         const int windowStartHeight = 1080;
@@ -25,6 +26,10 @@ namespace simulation{
         int newHeight = windowStartHeight;
     }
 
+    /*
+        These variables are used to control the simulation
+        They have to be global because they are accessed by both the callbacks and the simulation class
+    */
     namespace controlGlobals{
         double scrollYOffset = 0;
         double mouseClickXPos = 0;
@@ -59,97 +64,116 @@ namespace simulation{
 
 class main{
 private:
+    /*
+        Window/texture/agent count
+    */
     float textureRatio = (float)winGlobals::windowStartWidth/winGlobals::windowStartHeight;
+    int agentCount;
     int widthHeightResolution;
     int widthHeightResolution_current;
-    int agentCount;
 
+
+    /*
+        Controls
+    */
     float offsetX = 0;
     float offsetY = 0;
     float zoomMultiplier = 1;
+    float offsetX_inShader = offsetX; // These three are passed to the vertex shader in quadShader.vert.glsl
+    float offsetY_inShader = offsetY;
+    float zoomMultiplier_inShader = zoomMultiplier;
 
+
+    /*
+        Simulation settings (excl agent count and tex size, these are just settings that dont require a reset)
+    */
     float sensorDistance = 60;
     float sensorAngle = 1.5;
     float turnSpeed = 2;
-    float diffuse = 0.7;
-    float fade = 0.1;
     float speed = 1;
     bool drawSensors = false;
+    float diffuse = 0.7;
+    float fade = 0.1;
+    float sensorDistance_inShader = sensorDistance; // This and the following four are passed to agent.compute.glsl
+    float sensorAngle_inShader = sensorAngle;
+    float turnSpeed_inShader = turnSpeed;
+    float speed_inShader = speed;
+    bool drawSensors_inShader = drawSensors;
+    float diffuse_inShader = diffuse; // This is and fade are passed to diffuseFade.compute.glsl
+    float fade_inShader = fade;
+
+
+    /*
+        Pretty colours
+    */
+    // These need to be pointers because they are passed to ImGUI
     float* mainAgentColour = new float[3]{0.0f, 0.1f, 0.9f};
     float* agentXDirectionColour = new float[3]{0.0f, 0.7f, 0.2f};
     float* agentYDirectionColour = new float[3]{0.0f, 0.1f, 0.8f};
     float* sensorColour = new float[3]{0.8f, 0.1f, 0.9f};
-
-    float offsetX_inShader = offsetX;
-    float offsetY_inShader = offsetY;
-    float zoomMultiplier_inShader = zoomMultiplier;
-
-    float sensorDistance_inShader = sensorDistance;
-    float sensorAngle_inShader = sensorAngle;
-    float turnSpeed_inShader = turnSpeed;
-    float diffuse_inShader = diffuse;
-    float fade_inShader = fade;
-    float speed_inShader = speed;
-    bool drawSensors_inShader = drawSensors;
+    // These dont have to be pointers because they are only used to set shader uniforms
+    // Their value is copied from the pointers above
     float mainAgentColour_inShader[3];
     float agentXDirectionColour_inShader[3];
     float agentYDirectionColour_inShader[3];
     float sensorColour_inShader[3];
 
-    // The quad which the simulation is rendered to
-    std::vector<float> quadVertices = {
-        // - positions -  - texture coords -
-        // First triangle
-        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-        1.0f,  1.0f, 0.0f,   1.0f, 1.0f,
-        // Second triangle
-        1.0f,  1.0f, 0.0f,   1.0f, 1.0f,
-        -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f,  0.0f, 0.0f
+
+    /*
+        Geometry
+        positions (3) + texture coords (2), total 5 floats per vertex
+        First three sets of 5 are the first triangle, second three sets of 5 are the second triangle
+    */
+    std::vector<float> quadVertices = { // The quad which the simulation texture is rendered on to
+        -1.0f, -1.0f, 0.0f,    0.0f, 0.0f,
+         1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,    1.0f, 1.0f,
+         1.0f,  1.0f, 0.0f,    1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f,    0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f,    0.0f, 0.0f
 
     };
 
-    // The opengl components required to render the quad, and perform the simulation
+
+    /*
+        OpenGL components and agent data
+    */
     openGLComponents::VAO vao;
     openGLComponents::VBO vbo;
     openGLComponents::VBOLayout layout;
     openGLComponents::shader shader;
-    openGLComponents::simulationTexture texture;
-
-    openGLComponents::computeShader computeShader;
+    openGLComponents::simulationTexture simTexture;
+    openGLComponents::computeShader agentComputeShader;
+    openGLComponents::computeShader diffuseFadeShader;
     struct computeShaderStruct{
         float xPos = 0;
         float yPos = 0;
         float angle = 0;
-        float compatibility = 1234; // Struct layouts are stupid
-        // Basically, NEVER EVER create a layout (std140, std430, whatever) that holds a vec3
-        // It just wont work as expected
+        float compatibility = 1234; // Struct layouts are stupid, cant send vec3 to shader, so have to make it a vec4.
+        // I might add something to the simulation that uses this float for something cool, but for now it just acts as padding to make the struct work properly
     };
-    std::vector<computeShaderStruct> computeShaderData;
+    std::vector<computeShaderStruct> agentData;
     openGLComponents::SSBO SSBO; // Above vector will be stored in this SSBO
 
-    openGLComponents::computeShader diffuseFadeShader;
-    
-    void generateAgents(){
-        std::cout << "Generating agents" << std::endl;
-        this->computeShaderData.clear();
+
+    /*
+        Useful functions
+    */
+    void generateAgents(){ // Fills this->agentData with some randomly generated (but valid) data for the simulation to start with
+        this->agentData.clear();
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(0, 1);
-        // Fill the computeShaderData vector with data
         for(int i = 0; i < this->agentCount; i++){
             computeShaderStruct temp;
-            // Pick random x and y inside 100 pixel radius of the center of the grid with size this->widthHeightResolution
-            temp.xPos = dis(gen) * this->widthHeightResolution_current;
+            temp.xPos = dis(gen) * this->widthHeightResolution_current; // Random position across the whole texture
             temp.yPos = dis(gen) * this->widthHeightResolution_current;
             temp.angle = dis(gen) * 2 * 3.14159265359;
-            this->computeShaderData.push_back(temp);
+            this->agentData.push_back(temp);
         }
     }
 
-    template<typename T>
-    bool arryCmp(T* arr1, T* arr2, int size){
+    template<typename T> bool arryCmp(T* arr1, T* arr2, int size){
         for(int i = 0; i < size; i++){
             if(arr1[i] != arr2[i]){
                 return false;
@@ -158,95 +182,140 @@ private:
         return true;
     }
 
-    void checkSet1f(const char* name, float& value, float& value_inShader, openGLComponents::computeShader& shader){
-        this->shader.use();
+
+    /*
+        These functions helps get rid of some repetitive code in the update function
+    */
+    void checkSet1f_compute(const char* name, float& value, float& value_inShader, openGLComponents::computeShader& shader){
         if(value != value_inShader){
             shader.setUniform1f(name, value);
             value_inShader = value;
         }
     }
 
+    void checkSet1i_compute(const char* name, bool& value, bool& value_inShader, openGLComponents::computeShader& shader){
+        if(value != value_inShader){
+            shader.setUniform1i(name, value);
+            value_inShader = value;
+        }
+    }
+
+    void checkSet3f_compute(const char* name, float* value, float* value_inShader, openGLComponents::computeShader& shader){
+        if(!this->arryCmp(value_inShader, value, 3)){
+            for(int i = 0; i < 3; i++){
+                value_inShader[i] = value[i];
+            }
+            shader.setUniform3f(name, value_inShader[0], value_inShader[1], value_inShader[2]);
+        }
+    }
+
+
 public:
     main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
         this->agentCount = n_agents;
         this->widthHeightResolution = n_widthHeightResolution;
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < 3; i++){ // Setting the inShader values to the values of the pointers, as it is assumed that they will be set very soon by this->setup()
             this->mainAgentColour_inShader[i] = this->mainAgentColour[i];
             this->agentXDirectionColour_inShader[i] = this->agentXDirectionColour[i];
             this->agentYDirectionColour_inShader[i] = this->agentYDirectionColour[i];
             this->sensorColour_inShader[i] = this->sensorColour[i];
         }
-        this->generateAgents();
     }
 
     ~main(){
+        // Free the pesky pointers
         delete[] this->sensorColour;
         delete[] this->mainAgentColour;
         delete[] this->agentXDirectionColour;
         delete[] this->agentYDirectionColour;
     }
     
+    /*
+        Creates all the opengl objects and sets up the starting data and parameters for the simulation
+    */
     void setup(){
+        // vbo+layout+vao to render the quad
         this->vbo.generate(this->quadVertices, this->quadVertices.size() * sizeof(float));
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
+        // Create the texture to render the simulation on to
         this->widthHeightResolution_current = this->widthHeightResolution;
-        this->texture.init(this->widthHeightResolution_current);
-        this->texture.clear();
-        this->texture.bind();
+        this->simTexture.init(this->widthHeightResolution_current);
+        this->simTexture.clear();
+        this->simTexture.bind();
+        // Create the shader program to render the quad
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
         this->shader.setUniform1f("textureRatio", this->textureRatio);
         this->shader.setUniform1f("offsetX", this->offsetX_inShader);
         this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
-        this->computeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
-        this->computeShader.use();
-        this->computeShader.setUniform1i("size", this->widthHeightResolution_current);
-        this->computeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
-        this->computeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
-        this->computeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
-        this->computeShader.setUniform1f("speed", this->speed_inShader);
-        this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
-        this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
-        this->computeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
-        this->computeShader.setUniform3f("agentXDirectionColour", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
-        this->computeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
+        // Create the compute shader to simulate the agents
+        this->agentComputeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
+        this->agentComputeShader.use();
+        this->agentComputeShader.setUniform1i("size", this->widthHeightResolution_current);
+        this->agentComputeShader.setUniform1f("sensorDistance", this->sensorDistance_inShader);
+        this->agentComputeShader.setUniform1f("sensorAngle", this->sensorAngle_inShader);
+        this->agentComputeShader.setUniform1f("turnSpeed", this->turnSpeed_inShader);
+        this->agentComputeShader.setUniform1f("speed", this->speed_inShader);
+        this->agentComputeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
+        this->agentComputeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
+        this->agentComputeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
+        this->agentComputeShader.setUniform3f("agentXDirectionColour", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
+        this->agentComputeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
+        // Create the compute shader to diffuse and fade the texture over time
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
         this->diffuseFadeShader.setUniform1f("diffuse", this->diffuse_inShader);
         this->diffuseFadeShader.setUniform1f("fade", this->fade_inShader);
+        // Generate starting agent data, create an SSBO from it, and bind it to the compute shader
         this->generateAgents();
-        this->SSBO.generate(this->computeShaderData);
-        this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
+        this->SSBO.generate(this->agentData);
+        this->SSBO.bind(this->agentComputeShader.getID(), "agentData", 0);
     }
 
+    /*
+        Reset the simulation back to a starting state
+        This assumes that setup() has already been called
+    */
     void restart(){
+        // Reset the texture
         this->widthHeightResolution_current = this->widthHeightResolution;
-        this->texture.destroy();
-        this->texture.init(this->widthHeightResolution_current);
-        this->texture.clear();
+        this->simTexture.destroy();
+        this->simTexture.init(this->widthHeightResolution_current);
+        this->simTexture.clear();
+        // Reset agent SSBO
         this->generateAgents();
-        this->SSBO.generate(this->computeShaderData);
-        this->SSBO.bind(this->computeShader.getID(), "agentData", 0);
+        this->SSBO.generate(this->agentData);
+        this->SSBO.bind(this->agentComputeShader.getID(), "agentData", 0);
+        // Ensure that the size uniform in both of the compute shaders is set to the correct value
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
-        this->computeShader.use();
-        this->computeShader.setUniform1i("size", this->widthHeightResolution_current);
+        this->agentComputeShader.use();
+        this->agentComputeShader.setUniform1i("size", this->widthHeightResolution_current);
     }
 
+    /*
+        Execute the compute shaders and render the quad and texture
+    */
     void render(){
-        this->texture.bind();
+        this->simTexture.bind();
         this->diffuseFadeShader.execute(this->widthHeightResolution_current, this->widthHeightResolution_current, 1);
-        this->computeShader.execute(this->computeShaderData.size(), 1, 1);
+        this->agentComputeShader.execute(this->agentData.size(), 1, 1);
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);
     }
 
+    /*
+        ImGUI + setting various uniforms based on the values in the ImGUI window
+    */
     void update(){
+        /*
+            Draw the ImGui window for the simulation settings
+        */
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(600, 420), ImGuiCond_Always);
         ImGui::Begin("Simulation");
@@ -272,57 +341,24 @@ public:
         }
         ImGui::End();
 
-        this->checkSet1f("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->computeShader);
-        this->checkSet1f("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->computeShader);
-        this->checkSet1f("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->computeShader);
-        this->checkSet1f("diffuse", this->diffuse, this->diffuse_inShader, this->diffuseFadeShader);
-        this->checkSet1f("fade", this->fade, this->fade_inShader, this->diffuseFadeShader);
-        this->checkSet1f("speed", this->speed, this->speed_inShader, this->computeShader);
+        /*
+            Check if any of the uniforms need to be updated, and if so, update them
+        */
+        this->checkSet1f_compute("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->agentComputeShader);
+        this->checkSet1f_compute("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->agentComputeShader);
+        this->checkSet1f_compute("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->agentComputeShader);
+        this->checkSet1f_compute("diffuse", this->diffuse, this->diffuse_inShader, this->diffuseFadeShader);
+        this->checkSet1f_compute("fade", this->fade, this->fade_inShader, this->diffuseFadeShader);
+        this->checkSet1f_compute("speed", this->speed, this->speed_inShader, this->agentComputeShader);
+        this->checkSet3f_compute("mainAgentColour", this->mainAgentColour, this->mainAgentColour_inShader, this->agentComputeShader);
+        this->checkSet3f_compute("agentXDirectionColour", this->agentXDirectionColour, this->agentXDirectionColour_inShader, this->agentComputeShader);
+        this->checkSet3f_compute("agentYDirectionColour", this->agentYDirectionColour, this->agentYDirectionColour_inShader, this->agentComputeShader);
+        this->checkSet1i_compute("drawSensors", this->drawSensors, this->drawSensors_inShader, this->agentComputeShader);
+        this->checkSet3f_compute("sensorColour", this->sensorColour, this->sensorColour_inShader, this->agentComputeShader);
 
-        if(!arryCmp(this->mainAgentColour_inShader, this->mainAgentColour, 3)){
-            for(int i = 0; i < 3; i++){
-                this->mainAgentColour_inShader[i] = this->mainAgentColour[i];
-            }
-            this->computeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
-        }
-
-        if(!arryCmp(this->agentXDirectionColour_inShader, this->agentXDirectionColour, 3)){
-            for(int i = 0; i < 3; i++){
-                this->agentXDirectionColour_inShader[i] = this->agentXDirectionColour[i];
-            }
-            this->computeShader.setUniform3f("agentXDirectionColour", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
-        }
-
-        if(!arryCmp(this->agentYDirectionColour_inShader, this->agentYDirectionColour, 3)){
-            for(int i = 0; i < 3; i++){
-                this->agentYDirectionColour_inShader[i] = this->agentYDirectionColour[i];
-            }
-            this->computeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
-        }
-        
-        if(this->drawSensors_inShader != this->drawSensors){
-            this->drawSensors_inShader = this->drawSensors;
-            this->computeShader.setUniform1i("drawSensors", this->drawSensors_inShader);
-        }
-        
-        if(!arryCmp(this->sensorColour_inShader, this->sensorColour, 3)){
-            for(int i = 0; i < 3; i++){
-                this->sensorColour_inShader[i] = this->sensorColour[i];
-            }
-            this->computeShader.setUniform3f("sensorColour", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
-        }
-
-        this->shader.use();
-
-        if(winGlobals::currentHeight != winGlobals::newHeight
-        || winGlobals::currentWidth != winGlobals::newWidth){
-            winGlobals::currentHeight = winGlobals::newHeight;
-            winGlobals::currentWidth = winGlobals::newWidth;
-            this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
-            this->shader.setUniform1f("textureRatio", this->textureRatio);
-            
-        }
-
+        /*
+            Check if any input needs to be processed
+        */
         if(controlGlobals::scrollYOffset != 0){
             this->zoomMultiplier -= (controlGlobals::scrollYOffset / 40.0f) * this->zoomMultiplier*5;
             this->zoomMultiplier = (this->zoomMultiplier < 0)? 0 : this->zoomMultiplier;
@@ -330,7 +366,6 @@ public:
             this->zoomMultiplier_inShader = this->zoomMultiplier;
             this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
         }
-
         if(controlGlobals::rmbClicked){
             double xr = controlGlobals::prevMouseClickXPos / controlGlobals::mouseClickXPos;
             double yr = controlGlobals::prevMouseClickYPos / controlGlobals::mouseClickYPos;
@@ -345,6 +380,17 @@ public:
             this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         }
 
+        /*
+            Check if window size has changed, and if so, update the texture ratio to ensure it doesnt get distorted
+        */
+        if(winGlobals::currentHeight != winGlobals::newHeight
+        || winGlobals::currentWidth != winGlobals::newWidth){
+            winGlobals::currentHeight = winGlobals::newHeight;
+            winGlobals::currentWidth = winGlobals::newWidth;
+            this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
+            this->shader.setUniform1f("textureRatio", this->textureRatio);
+            
+        }
     }
 
 };
