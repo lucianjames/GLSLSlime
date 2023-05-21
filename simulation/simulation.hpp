@@ -5,6 +5,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <opencv2/opencv.hpp>
+
 #include "OpenGLComponents/VAO.hpp"
 #include "OpenGLComponents/VBO.hpp"
 #include "OpenGLComponents/shader.hpp"
@@ -212,6 +214,27 @@ private:
         }
     }
 
+    void getTexImageTest(){
+        float* pixels = this->simTexture.getTexImage();
+        // Pixels are in range 0-1, so need to be multiplied by 255
+        for(int i = 0; i < this->widthHeightResolution_current * this->widthHeightResolution_current * 4; i++){
+            pixels[i] *= 255;
+        }
+        cv::Mat img(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC4, pixels);
+        // Split into channels and write each to a file
+        std::vector<cv::Mat> channels;
+        cv::split(img, channels);
+        for(int i = 0; i < 4; i++){
+            cv::imwrite("getTexImageTest_idx-" + std::to_string(i) + ".png", channels[i]);
+        }
+        cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
+        cv::imwrite("getTexImageTest_full.png", img);
+        cv::Mat img_withoutTransparency(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC3);
+        cv::cvtColor(img, img_withoutTransparency, cv::COLOR_BGRA2BGR);
+        cv::imwrite("getTexImageTest_full_withoutTransparency.png", img_withoutTransparency);
+        free(pixels);
+    }
+
 
 public:
     main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
@@ -393,6 +416,12 @@ public:
             this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             this->shader.setUniform1f("textureRatio", this->textureRatio);
         }
+
+        ImGui::Begin("test");
+        if(ImGui::Button("GetTexTest")){
+            this->getTexImageTest();
+        }
+        ImGui::End();
 
     }
     

@@ -60,6 +60,19 @@ namespace openGLComponents{
                 GLCall(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->res, this->res, GL_RGBA, GL_FLOAT, data));
             }
             
+            /*
+                !!! allocates memory which must be freed manually later on
+                I will probably rewrite this a bit later
+
+                Returns a pointer to the pixels of the texture
+            */
+            float* getTexImage(){
+                this->bind();
+                float* pixels = new float[this->res * this->res * 4];
+                GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixels));
+                return pixels;
+            }
+            
 
     };
 

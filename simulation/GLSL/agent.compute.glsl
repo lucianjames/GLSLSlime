@@ -80,4 +80,5 @@ void main(){
                   /1.5f;
 
     imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(colour, 1.0f));
+    //imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(0.0f, 0.0f, 0.0f, 1.0f));
 }

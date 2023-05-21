@@ -17,11 +17,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui-glfw-glad-glm)
 
+find_package(OpenCV REQUIRED) # Require opencv installed on system
+
+include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(GLSLSlime main.cpp ${HEADERS})
 target_link_libraries(
         GLSLSlime
         imgui
         glm
+        ${OpenCV_LIBS}
 )
 
 # Get all .glsl files in ./simulation/GLSL and copy them to the build directory (under ./GLSL)
