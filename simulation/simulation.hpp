@@ -1,5 +1,6 @@
 #include <vector>
 #include <random>
+#include <chrono>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -234,6 +235,20 @@ private:
         cv::imwrite("getTexImageTest_full_withoutTransparency.png", img_withoutTransparency);
         free(pixels);
     }
+    
+    void getTexImageTest2(){
+        auto start = std::chrono::high_resolution_clock::now();
+        float* pixels = this->simTexture.getTexImage();
+        auto endGetTexImage = std::chrono::high_resolution_clock::now();
+        cv::Mat img(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC4, pixels);
+        img *= 255;
+        cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
+        cv::imwrite("getTexImageTest2.png", img);
+        free(pixels);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::cout << "getTexImageTest2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+        std::cout << "Getting pixels from the GPU took " << std::chrono::duration_cast<std::chrono::milliseconds>(endGetTexImage - start).count() << "ms" << std::endl;
+    }
 
 
 public:
@@ -419,7 +434,7 @@ public:
 
         ImGui::Begin("test");
         if(ImGui::Button("GetTexTest")){
-            this->getTexImageTest();
+            this->getTexImageTest2();
         }
         ImGui::End();
 
