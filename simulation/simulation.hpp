@@ -126,6 +126,15 @@ private:
 
 
     /*
+        Animation rendering
+    */
+    bool renderFrames = false;
+    int animFrameCount = 0;
+    int renderedFrameCount = 0;
+    int frameInterval = 1;
+
+
+    /*
         Geometry
         positions (3) + texture coords (2), total 5 floats per vertex
         First three sets of 5 are the first triangle, second three sets of 5 are the second triangle
@@ -214,40 +223,15 @@ private:
             shader.setUniform3f(name, value_inShader[0], value_inShader[1], value_inShader[2]);
         }
     }
-
-    void getTexImageTest(){
-        float* pixels = this->simTexture.getTexImage();
-        // Pixels are in range 0-1, so need to be multiplied by 255
-        for(int i = 0; i < this->widthHeightResolution_current * this->widthHeightResolution_current * 4; i++){
-            pixels[i] *= 255;
-        }
-        cv::Mat img(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC4, pixels);
-        // Split into channels and write each to a file
-        std::vector<cv::Mat> channels;
-        cv::split(img, channels);
-        for(int i = 0; i < 4; i++){
-            cv::imwrite("getTexImageTest_idx-" + std::to_string(i) + ".png", channels[i]);
-        }
-        cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
-        cv::imwrite("getTexImageTest_full.png", img);
-        cv::Mat img_withoutTransparency(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC3);
-        cv::cvtColor(img, img_withoutTransparency, cv::COLOR_BGRA2BGR);
-        cv::imwrite("getTexImageTest_full_withoutTransparency.png", img_withoutTransparency);
-        free(pixels);
-    }
     
-    void getTexImageTest2(){
-        auto start = std::chrono::high_resolution_clock::now();
+    void writeAnimFrame(){
         float* pixels = this->simTexture.getTexImage();
-        auto endGetTexImage = std::chrono::high_resolution_clock::now();
         cv::Mat img(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC4, pixels);
         img *= 255;
         cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
-        cv::imwrite("getTexImageTest2.png", img);
+        cv::imwrite("animFrame_" + std::to_string(this->animFrameCount) + ".png", img);
+        this->animFrameCount++;
         free(pixels);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "getTexImageTest2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-        std::cout << "Getting pixels from the GPU took " << std::chrono::duration_cast<std::chrono::milliseconds>(endGetTexImage - start).count() << "ms" << std::endl;
     }
 
 
@@ -358,7 +342,7 @@ public:
             Draw the ImGui window for the simulation settings
         */
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(600, 420), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(600, 520), ImGuiCond_Always);
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
@@ -380,6 +364,8 @@ public:
         if(ImGui::Button("Restart")){
             this->restart();
         }
+        ImGui::Checkbox("Render frames to disk", &this->renderFrames);
+        ImGui::SliderInt("Frame interval", &this->frameInterval, 1, 10);
         ImGui::End();
 
         /*
@@ -432,12 +418,10 @@ public:
             this->shader.setUniform1f("textureRatio", this->textureRatio);
         }
 
-        ImGui::Begin("test");
-        if(ImGui::Button("GetTexTest")){
-            this->getTexImageTest2();
+        if(this->renderFrames && this->renderedFrameCount % this->frameInterval == 0){
+            this->writeAnimFrame();
         }
-        ImGui::End();
-
+        this->renderedFrameCount++;
     }
     
 };
