@@ -51,19 +51,21 @@ namespace openGLComponents{
                 this->stride = 0;
             }
 
+            void push(unsigned int type, unsigned int count, unsigned char normalized){
+                this->elements.push_back({type, count, normalized});
+                this->stride += count * VBOElement::getSizeOfType(type);
+            }
+
             void pushFloat(unsigned int count){
-                this->elements.push_back({GL_FLOAT, count, GL_FALSE});
-                this->stride += count * VBOElement::getSizeOfType(GL_FLOAT);
+                this->push(GL_FLOAT, count, GL_FALSE);
             }
 
             void pushUnsignedInt(unsigned int count){
-                this->elements.push_back({GL_UNSIGNED_INT, count, GL_FALSE});
-                this->stride += count * VBOElement::getSizeOfType(GL_UNSIGNED_INT);
+                this->push(GL_UNSIGNED_INT, count, GL_FALSE);
             }
 
             void pushUnsignedByte(unsigned int count){
-                this->elements.push_back({GL_UNSIGNED_BYTE, count, GL_TRUE});
-                this->stride += count * VBOElement::getSizeOfType(GL_UNSIGNED_BYTE);
+                this->push(GL_UNSIGNED_BYTE, count, GL_TRUE);
             }
 
             inline const std::vector<VBOElement> getElements() const { return this->elements; }

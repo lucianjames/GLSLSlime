@@ -23,16 +23,16 @@ namespace openGLComponents{
                 GLCall(glBindVertexArray(this->ID));
             }
 
-            void addBuffer(VBO& v, const VBOLayout& l){
+            void addBuffer(VBO& vbo, const VBOLayout& layout){
                 this->bind();
-                v.bind();
-                const auto& elements = l.getElements();
+                vbo.bind();
+                const auto& elements = layout.getElements();
                 unsigned int offset = 0;
                 for(int i=0; i<elements.size(); i++){
                     const auto& element = elements[i]; // Get the element
                     GLCall(glEnableVertexAttribArray(i + attribOffset)); // Enable the vertex attribute
                     // Then set tthe attribute:
-                    GLCall(glVertexAttribPointer(i + attribOffset, element.count, element.type, element.normalized, l.getStride(), reinterpret_cast<const void*>(offset)));
+                    GLCall(glVertexAttribPointer(i + attribOffset, element.count, element.type, element.normalized, layout.getStride(), reinterpret_cast<const void*>(offset)));
                     offset += element.count * VBOElement::getSizeOfType(element.type); // Increment the offset
                 }
                 this->attribOffset += elements.size();
