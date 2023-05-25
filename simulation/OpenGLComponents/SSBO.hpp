@@ -7,7 +7,6 @@ namespace openGLComponents{
     class SSBO{
         private:
             unsigned int ID;
-            bool bufferCreated = false;
         
         public:
             /*
@@ -17,25 +16,24 @@ namespace openGLComponents{
             */
             template<typename T>
             void generate(std::vector<T>& data){
-                if(bufferCreated){
-                    GLCall(glDeleteBuffers(1, &ID));
+                if(this->ID != 0){
+                    GLCall(glDeleteBuffers(1, &this->ID));
+                    this->ID = 0;
                 }
-                GLCall(glGenBuffers(1, &ID));
-                GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID));
+                GLCall(glGenBuffers(1, &this->ID));
+                GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->ID));
                 GLCall(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * data.size(), data.data(), GL_DYNAMIC_COPY));
-                bufferCreated = true;	
             }
 
             void bind(unsigned int shaderID, const char name[], unsigned int bindingPoint) const{
-                unsigned int block_index;
-                block_index = glGetProgramResourceIndex(shaderID, GL_SHADER_STORAGE_BLOCK, name);
+                unsigned int block_index = glGetProgramResourceIndex(shaderID, GL_SHADER_STORAGE_BLOCK, name);
                 glShaderStorageBlockBinding(shaderID, block_index, 0);
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingPoint, ID);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingPoint, this->ID);
             }
 
             ~SSBO(){
-                if(bufferCreated){
-                    GLCall(glDeleteBuffers(1, &ID));
+                if(this->ID != 0){
+                    GLCall(glDeleteBuffers(1, &this->ID));
                 }
             }
 
