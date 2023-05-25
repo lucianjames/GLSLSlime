@@ -15,6 +15,9 @@
 #include "OpenGLComponents/computeShader.hpp"
 #include "OpenGLComponents/SSBO.hpp"
 
+// ! Important, must be same as in diffuseFade.compute.glsl
+#define DF_GROUPSIZE 32
+
 namespace simulation{
 
     /*
@@ -331,7 +334,7 @@ public: // ==================================================== PUBLIC =========
     */
     void step(){
         this->simTexture.bind();
-        this->diffuseFadeShader.execute(this->widthHeightResolution_current, this->widthHeightResolution_current, 1);
+        this->diffuseFadeShader.execute((this->widthHeightResolution_current+DF_GROUPSIZE-1)/DF_GROUPSIZE, (this->widthHeightResolution_current+DF_GROUPSIZE-1)/DF_GROUPSIZE, 1);
         this->agentComputeShader.execute(this->agentData.size(), 1, 1);
     }
 
