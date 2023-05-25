@@ -1,5 +1,8 @@
 #version 460 core
-layout(local_size_x = 1, local_size_y = 1) in;
+
+#define GROUP_SIZE 1024
+
+layout(local_size_x = GROUP_SIZE) in;
 layout(rgba32f, binding = 0) uniform image2D img;
 uniform int size;
 uniform float sensorDistance;
@@ -39,6 +42,8 @@ ivec2 getPixelCoords(float angle, float dist, uint agentID){
 void main(){
     // Get agent variables
     uint agentID = gl_GlobalInvocationID.x;
+    if(agentID >= size*size){ return; }
+    
     ivec2 pixelCoords_left = getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID);
     ivec2 pixelCoords_right = getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID);
     float leftSensor = imageLoad(img, pixelCoords_left).w; // Uses alpha channel
