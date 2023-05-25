@@ -10,7 +10,8 @@ uniform float offsetY;
 uniform float zoomMultiplier;
 
 void main(){
+    vec2 offset = vec2(offsetX, offsetY);
     gl_Position = vec4(position, 1.0f);
-    v_texCoord = (texCoord + vec2(offsetX, offsetY) - 0.5f) * zoomMultiplier + 0.5f;
+    v_texCoord = ((texCoord - 0.5f) * zoomMultiplier) + 0.5f - offset;
     v_texCoord.x *= textureRatio;
 }
