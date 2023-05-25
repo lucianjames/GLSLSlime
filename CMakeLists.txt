@@ -1,29 +1,55 @@
-include(FetchContent)
+# Basic project settings
 cmake_minimum_required(VERSION 3.8)
+project(GLSLSlime VERSION 1.0.0)
 
-project(GLSLSlime)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Debug)
+# Set some build settings
+set(CMAKE_BUILD_TYPE Release)
+set(BUILD_SHARED_LIBS OFF)
 
+# Create executable for GLSLSlime
+add_executable(GLSLSlime main.cpp ${HEADERS})
+
+# Ensure that optimisation is enabled
+target_compile_features(GLSLSlime PRIVATE cxx_std_17)
 if(UNIX)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    target_compile_options(GLSLSlime PRIVATE -O3) # Assume GCC or Clang
+elseif(WIN32)
+    target_compile_options(GLSLSlime PRIVATE /O2) # Assume MSVC
 endif()
 
-# This is a really nice and easy way to include all the openGL stuff i need
-set(BUILD_SHARED_LIBS OFF)
+# Fetch imgui/glfw/glad/glm
+include(FetchContent)
 FetchContent_Declare(
-        imgui-glfw-glad-glm
-        GIT_REPOSITORY https://github.com/LJ3D/imgui-glfw-glad-glm
+    imgui-glfw-glad-glm
+    GIT_REPOSITORY https://github.com/LJ3D/imgui-glfw-glad-glm
+    GIT_SHALLOW ON
+    UPDATE_DISCONNECTED ON
 )
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(imgui-glfw-glad-glm)
 
-add_executable(GLSLSlime main.cpp ${HEADERS})
+# Find OpenCV
+# Because building from source will take too long
+find_package(OpenCV REQUIRED)
+
+# Link everything together
+target_include_directories(GLSLSlime PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(
-        GLSLSlime
-        imgui
-        glm
+    GLSLSlime
+    imgui
+    glm
+    ${OpenCV_LIBS}
 )
 
-# Get all .glsl files in ./simulation/GLSL and copy them to the build directory (under ./GLSL)
-file(GLOB_RECURSE GLSL_FILES "simulation/GLSL/*.glsl")
-file(COPY ${GLSL_FILES} DESTINATION ${CMAKE_BINARY_DIR}/GLSL)
+# Copy GLSL files to build directory
+add_custom_target(
+    copy_glsl_files ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/simulation/GLSL
+        ${CMAKE_BINARY_DIR}/GLSL
+    COMMENT "Copying GLSL files to build directory"
+)
+add_dependencies(GLSLSlime copy_glsl_files)

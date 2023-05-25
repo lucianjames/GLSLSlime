@@ -1,9 +1,12 @@
 #include <vector>
 #include <random>
+#include <chrono>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
+#include <opencv2/opencv.hpp>
 
 #include "OpenGLComponents/VAO.hpp"
 #include "OpenGLComponents/VBO.hpp"
@@ -66,7 +69,7 @@ namespace simulation{
     }
 
 class main{
-private:
+private: // ==================================================== PRIVATE ====================================================
     /*
         Window/texture/agent count
     */
@@ -120,6 +123,15 @@ private:
     float agentXDirectionColour_inShader[3];
     float agentYDirectionColour_inShader[3];
     float sensorColour_inShader[3];
+
+
+    /*
+        Animation rendering
+    */
+    bool renderFrames = false;
+    int animFrameCount = 0;
+    int renderedFrameCount = 0;
+    int frameInterval = 1;
 
 
     /*
@@ -211,13 +223,17 @@ private:
             shader.setUniform3f(name, value_inShader[0], value_inShader[1], value_inShader[2]);
         }
     }
+    
 
-
-public:
+public: // ==================================================== PUBLIC ====================================================
+    /*
+        Constructor/destructor
+    */
     main(unsigned int n_agents=10000, unsigned int n_widthHeightResolution=1024){
         this->agentCount = n_agents;
         this->widthHeightResolution = n_widthHeightResolution;
-        for(int i = 0; i < 3; i++){ // Setting the inShader values to the values of the pointers, as it is assumed that they will be set very soon by this->setup()
+        // Setting the inShader values to the values of the pointers, as it is assumed that they will be set very soon by this->setup():
+        for(int i = 0; i < 3; i++){ 
             this->mainAgentColour_inShader[i] = this->mainAgentColour[i];
             this->agentXDirectionColour_inShader[i] = this->agentXDirectionColour[i];
             this->agentYDirectionColour_inShader[i] = this->agentYDirectionColour[i];
@@ -233,6 +249,7 @@ public:
         delete[] this->agentYDirectionColour;
     }
     
+
     /*
         Creates all the opengl objects and sets up the starting data and parameters for the simulation
     */
@@ -242,11 +259,13 @@ public:
         this->layout.pushFloat(3);
         this->layout.pushFloat(2);
         this->vao.addBuffer(this->vbo, this->layout); // Add the buffer "vbo" that has the layout defined by "layout"
+        
         // Create the texture to render the simulation on to
         this->widthHeightResolution_current = this->widthHeightResolution;
         this->simTexture.init(this->widthHeightResolution_current);
         this->simTexture.clear();
         this->simTexture.bind();
+
         // Create the shader program to render the quad
         this->shader.createShaderFromDisk("GLSL/quadShader.vert.glsl", "GLSL/quadShader.frag.glsl");
         this->shader.use();
@@ -254,6 +273,7 @@ public:
         this->shader.setUniform1f("offsetX", this->offsetX_inShader);
         this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         this->shader.setUniform1f("zoomMultiplier", this->zoomMultiplier_inShader);
+        
         // Create the compute shader to simulate the agents
         this->agentComputeShader.createShaderFromDisk("GLSL/agent.compute.glsl");
         this->agentComputeShader.use();
@@ -267,17 +287,20 @@ public:
         this->agentComputeShader.setUniform3f("mainAgentColour", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
         this->agentComputeShader.setUniform3f("agentXDirectionColour", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
         this->agentComputeShader.setUniform3f("agentYDirectionColour", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
+        
         // Create the compute shader to diffuse and fade the texture over time
         this->diffuseFadeShader.createShaderFromDisk("GLSL/diffuseFade.compute.glsl");
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
         this->diffuseFadeShader.setUniform1f("diffuse", this->diffuse_inShader);
         this->diffuseFadeShader.setUniform1f("fade", this->fade_inShader);
+        
         // Generate starting agent data, create an SSBO from it, and bind it to the compute shader
         this->generateAgents();
         this->SSBO.generate(this->agentData);
         this->SSBO.bind(this->agentComputeShader.getID(), "agentData", 0);
     }
+
 
     /*
         Reset the simulation back to a starting state
@@ -289,10 +312,12 @@ public:
         this->simTexture.destroy();
         this->simTexture.init(this->widthHeightResolution_current);
         this->simTexture.clear();
+
         // Reset agent SSBO
         this->generateAgents();
         this->SSBO.generate(this->agentData);
         this->SSBO.bind(this->agentComputeShader.getID(), "agentData", 0);
+
         // Ensure that the size uniform in both of the compute shaders is set to the correct value
         this->diffuseFadeShader.use();
         this->diffuseFadeShader.setUniform1f("size", this->widthHeightResolution_current);
@@ -300,27 +325,35 @@ public:
         this->agentComputeShader.setUniform1i("size", this->widthHeightResolution_current);
     }
 
+
     /*
-        Execute the compute shaders and render the quad and texture
+        Perform a single step of the simulation
     */
-    void render(){
+    void step(){
         this->simTexture.bind();
         this->diffuseFadeShader.execute(this->widthHeightResolution_current, this->widthHeightResolution_current, 1);
         this->agentComputeShader.execute(this->agentData.size(), 1, 1);
+    }
+
+
+    /*
+        Render the quad and texture
+    */
+    void render(){
+        this->simTexture.bind();
         this->shader.use();
         this->vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, this->quadVertices.size() / 5);
     }
 
+
     /*
         ImGUI + setting various uniforms based on the values in the ImGUI window
     */
     void update(){
-        /*
-            Draw the ImGui window for the simulation settings
-        */
+        // Draw the ImGui window for the simulation settings
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(600, 420), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(600, 520), ImGuiCond_Always);
         ImGui::Begin("Simulation");
         ImGui::SliderFloat("Sensor Distance", &this->sensorDistance, 0, 300);
         ImGui::SliderFloat("Sensor Angle", &this->sensorAngle, 0, 3.1416);
@@ -342,11 +375,11 @@ public:
         if(ImGui::Button("Restart")){
             this->restart();
         }
+        ImGui::Checkbox("Render frames to disk", &this->renderFrames);
+        ImGui::SliderInt("Frame interval", &this->frameInterval, 0, 10);
         ImGui::End();
 
-        /*
-            Check if any of the uniforms need to be updated, and if so, update them
-        */
+        // Check if any of the uniforms need to be updated, and if so, update them
         this->checkSet1f_compute("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->agentComputeShader);
         this->checkSet1f_compute("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->agentComputeShader);
         this->checkSet1f_compute("turnSpeed", this->turnSpeed, this->turnSpeed_inShader, this->agentComputeShader);
@@ -359,9 +392,7 @@ public:
         this->checkSet1i_compute("drawSensors", this->drawSensors, this->drawSensors_inShader, this->agentComputeShader);
         this->checkSet3f_compute("sensorColour", this->sensorColour, this->sensorColour_inShader, this->agentComputeShader);
 
-        /*
-            Check if any input needs to be processed
-        */
+        // Check if any input needs to be processed
         if(controlGlobals::scrollYOffset != 0){
             this->zoomMultiplier -= (controlGlobals::scrollYOffset / 40.0f) * this->zoomMultiplier*5;
             this->zoomMultiplier = (this->zoomMultiplier < 0)? 0 : this->zoomMultiplier;
@@ -383,17 +414,24 @@ public:
             this->shader.setUniform1f("offsetY", this->offsetY_inShader);
         }
 
-        /*
-            Check if window size has changed, and if so, update the texture ratio to ensure it doesnt get distorted
-        */
-        if(winGlobals::currentHeight != winGlobals::newHeight
-        || winGlobals::currentWidth != winGlobals::newWidth){
+        // Check if window size has changed, and if so, update the texture ratio to ensure it doesnt get distorted
+        if(winGlobals::currentHeight != winGlobals::newHeight || winGlobals::currentWidth != winGlobals::newWidth){
             winGlobals::currentHeight = winGlobals::newHeight;
             winGlobals::currentWidth = winGlobals::newWidth;
             this->textureRatio = (float)winGlobals::currentWidth/winGlobals::currentHeight;
             this->shader.setUniform1f("textureRatio", this->textureRatio);
         }
 
+        if(this->renderFrames && this->renderedFrameCount % this->frameInterval == 0){
+            float* pixels = this->simTexture.getTexImage();
+            cv::Mat img(this->widthHeightResolution_current, this->widthHeightResolution_current, CV_32FC4, pixels);
+            img *= 255;
+            cv::cvtColor(img, img, cv::COLOR_RGBA2BGRA);
+            cv::imwrite("animFrame_" + std::to_string(this->animFrameCount) + ".png", img);
+            this->animFrameCount++;
+            free(pixels);
+        }
+        this->renderedFrameCount++;
     }
     
 };

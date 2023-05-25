@@ -14,7 +14,6 @@
 
 #define N_AGENTS 100000
 #define TEXTURE_SIZE 1024
-#define F_WAIT 10
 #define DEBUG true
 
 int main(){
@@ -44,7 +43,7 @@ int main(){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 450 core");
+    ImGui_ImplOpenGL3_Init("#version 460 core");
     ImGui::StyleColorsClassic();
     GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f));
 
@@ -78,15 +77,15 @@ int main(){
         ImGui::End();
 
         // ===== Draw imgui window, update+render simulation
-        sim.update();
-        sim.render();
+        sim.update(); // imgui, window, etc
+        sim.step(); // Runs compute shaders to update agents
+        sim.render(); // Draws quad with simulation texture
 
         // ===== Render imgui and swap buffers
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         GLCall(glClear(GL_COLOR_BUFFER_BIT));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Not sure why this is here but someone clearly added it for a reason so ill keep it lol
         end = std::chrono::high_resolution_clock::now();
         frameTime += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         if(f++ == 10){
