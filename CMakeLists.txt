@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(BUILD_SHARED_LIBS OFF)
 
 # Create executable for GLSLSlime
-add_executable(GLSLSlime main.cpp ${HEADERS})
+add_executable(GLSLSlime main.cpp)
 
 # Ensure that optimisation is enabled
 target_compile_features(GLSLSlime PRIVATE cxx_std_17)
