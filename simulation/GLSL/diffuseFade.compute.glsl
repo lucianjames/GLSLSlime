@@ -14,7 +14,6 @@ shared vec4 block[GROUP_SIZE+2][GROUP_SIZE+2];
 void main(){
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 local_coords = ivec2(gl_LocalInvocationID.xy);
-    ivec2 group_coords = ivec2(gl_WorkGroupID.xy);
 
     // Load block of pixels into shared memory
     block[local_coords.x+1][local_coords.y+1] = imageLoad(img, pixel_coords);
