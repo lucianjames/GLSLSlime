@@ -17,11 +17,11 @@ uniform vec3 agentXDirectionColour;
 
 
 layout (std140, binding=2) buffer agentData{
-    vec3 data[];
+    vec4 data[];
     // x = x position
     // y = y position
     // z = angle
-    // Also pad the data to make it a vec4 when you send it to this shader
+    // w = unused (i love when shaders force me to use 4 floats because otherwise memory layout goes funky)
 };
 
 // Loops the position around to the other side of the texture if it goes out of bounds
