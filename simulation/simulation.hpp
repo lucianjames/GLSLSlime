@@ -376,7 +376,7 @@ public: // ==================================================== PUBLIC =========
         }
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::Checkbox("Render frames to disk", &this->renderFrames);
-        ImGui::SliderInt("Frame interval", &this->frameInterval, 0, 10);
+        ImGui::SliderInt("Frame interval", &this->frameInterval, 1, 10);
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::Text("Restart required for the following settings:");
         ImGui::SliderInt("Agent Count", &this->agentCount, 0, 5000000);
