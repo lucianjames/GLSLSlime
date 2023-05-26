@@ -15,7 +15,7 @@
 #include "OpenGLComponents/computeShader.hpp"
 #include "OpenGLComponents/SSBO.hpp"
 
-// ! Important, must be same as in diffuseFade.compute.glsl
+// ! Important, these must be the same as the compute shader group sizes
 #define DF_GROUPSIZE 32
 #define AG_GROUPSIZE 1024
 
