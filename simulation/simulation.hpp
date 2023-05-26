@@ -371,6 +371,12 @@ public: // ==================================================== PUBLIC =========
         ImGui::ColorEdit3("Agent Y Direction Colour", this->agentYDirectionColour);
         ImGui::Checkbox("Draw Sensors", &this->drawSensors);
         ImGui::ColorEdit3("Sensor Colour", this->sensorColour);
+        if(ImGui::Button("Toggle texture repeat")){
+            this->simTexture.toggleRepeat();
+        }
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Checkbox("Render frames to disk", &this->renderFrames);
+        ImGui::SliderInt("Frame interval", &this->frameInterval, 0, 10);
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::Text("Restart required for the following settings:");
         ImGui::SliderInt("Agent Count", &this->agentCount, 0, 5000000);
@@ -379,8 +385,6 @@ public: // ==================================================== PUBLIC =========
         if(ImGui::Button("Restart")){
             this->restart();
         }
-        ImGui::Checkbox("Render frames to disk", &this->renderFrames);
-        ImGui::SliderInt("Frame interval", &this->frameInterval, 0, 10);
         ImGui::End();
 
         // Check if any of the uniforms need to be updated, and if so, update them

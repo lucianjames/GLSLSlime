@@ -14,6 +14,7 @@ namespace openGLComponents{
         private:
             unsigned int* textures;
             unsigned int res;
+            bool texRepeat = true;
 
             // Le copypasta from the old version
             void makeTextures(unsigned int* textures, unsigned int n, unsigned int res){
@@ -72,8 +73,14 @@ namespace openGLComponents{
                 GLCall(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixels));
                 return pixels;
             }
-            
 
+            void toggleRepeat(){
+                this->texRepeat = !this->texRepeat;
+                GLCall(glActiveTexture(GL_TEXTURE0));
+                GLCall(glBindTexture(GL_TEXTURE_2D, this->textures[0]));
+                GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, this->texRepeat ? GL_REPEAT : GL_CLAMP_TO_BORDER));
+                GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, this->texRepeat ? GL_REPEAT : GL_CLAMP_TO_BORDER));
+            }
     };
 
 }
