@@ -4,6 +4,7 @@
 
 layout(local_size_x = GROUP_SIZE) in;
 layout(rgba32f, binding = 0) uniform image2D img;
+
 uniform int size;
 uniform float sensorDistance;
 uniform float sensorAngle;
