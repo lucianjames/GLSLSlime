@@ -17,7 +17,7 @@ uniform vec3 agentXDirectionColour;
 
 
 layout (std140, binding=2) buffer agentData{
-    vec4 data[];
+    vec4 aData[]; // Agent Data
     // x = x position
     // y = y position
     // z = angle
@@ -34,7 +34,7 @@ void loopBounds(inout vec2 pos){
 
 // Returns the pixel coordinates of a pixel at a certain angle and distance from the agent at agentID
 ivec2 getPixelCoords(float angle, float dist, uint agentID){
-    vec2 location = vec2(data[agentID].x, data[agentID].y) + vec2(cos(angle), sin(angle))*dist;
+    vec2 location = vec2(aData[agentID].x, aData[agentID].y) + vec2(cos(angle), sin(angle))*dist;
     loopBounds(location);
     return ivec2(int(location[0]), int(location[1]));
 }
@@ -46,8 +46,8 @@ void main(){
         return;
     }
     
-    ivec2 pixelCoords_left = getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID);
-    ivec2 pixelCoords_right = getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID);
+    ivec2 pixelCoords_left = getPixelCoords(aData[agentID].z+sensorAngle, sensorDistance, agentID);
+    ivec2 pixelCoords_right = getPixelCoords(aData[agentID].z-sensorAngle, sensorDistance, agentID);
     float leftSensor = imageLoad(img, pixelCoords_left).w; // Uses alpha channel
     float rightSensor = imageLoad(img, pixelCoords_right).w;
     if(drawSensors == 1){
@@ -56,17 +56,16 @@ void main(){
     }
 
     // Update angle of agent
-    data[agentID].z += leftSensor*turnSpeed - rightSensor*turnSpeed;
-    data[agentID].z = mod(data[agentID].z, 6.28318530718f); // Ensure angle doesnt go up and up until floating point errors cause problems
+    aData[agentID].z += leftSensor*turnSpeed - rightSensor*turnSpeed;
+    aData[agentID].z = mod(aData[agentID].z, 6.28318530718f); // Ensure angle doesnt go up and up until floating point errors cause problems
 
     // Update location of agent
-    vec2 direction = vec2(cos(data[agentID].z), sin(data[agentID].z))*speed;
-    vec2 newpos = vec2(data[agentID].x, data[agentID].y) + (direction);
+    vec2 direction = vec2(cos(aData[agentID].z), sin(aData[agentID].z))*speed;
+    vec2 newpos = vec2(aData[agentID].x, aData[agentID].y) + (direction);
     loopBounds(newpos);
 
     // Set agent position
-    data[agentID].x = newpos[0];
-    data[agentID].y = newpos[1];
+    aData[agentID].xy = newpos;
 
     // Draw a pixel at the agents location
     vec3 colour = ((((direction.x/speed)+1)*agentXDirectionColour + // Multiply the X direction by the X direction colour
@@ -74,5 +73,5 @@ void main(){
                   mainAgentColour)) // Add in the "main" agent colour to the mix 
                   /1.5f;
 
-    imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(colour, 1.0f));
+    imageStore(img, ivec2(int(aData[agentID].x), int(aData[agentID].y)), vec4(colour, 1.0f));
 }
