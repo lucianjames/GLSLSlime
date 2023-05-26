@@ -22,8 +22,8 @@ namespace openGLComponents{
                 for (int i = 0; i < n; i++) {
                     GLCall(glActiveTexture(GL_TEXTURE0 + i));
                     GLCall(glBindTexture(GL_TEXTURE_2D, textures[i]));
-                    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-                    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+                    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, this->texRepeat ? GL_REPEAT : GL_CLAMP_TO_BORDER));
+                    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, this->texRepeat ? GL_REPEAT : GL_CLAMP_TO_BORDER));
                     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
                     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
                     GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, res, res, 0, GL_RGBA, GL_FLOAT, NULL));
