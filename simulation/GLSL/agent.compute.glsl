@@ -42,7 +42,9 @@ ivec2 getPixelCoords(float angle, float dist, uint agentID){
 void main(){
     // Get agent variables
     uint agentID = gl_GlobalInvocationID.x;
-    if(agentID >= size*size){ return; }
+    if(agentID >= size*size){
+        return;
+    }
     
     ivec2 pixelCoords_left = getPixelCoords(data[agentID].z+sensorAngle, sensorDistance, agentID);
     ivec2 pixelCoords_right = getPixelCoords(data[agentID].z-sensorAngle, sensorDistance, agentID);
@@ -73,5 +75,4 @@ void main(){
                   /1.5f;
 
     imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(colour, 1.0f));
-    //imageStore(img, ivec2(int(data[agentID].x), int(data[agentID].y)), vec4(0.0f, 0.0f, 0.0f, 1.0f));
 }
