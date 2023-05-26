@@ -387,6 +387,29 @@ public: // ==================================================== PUBLIC =========
         }
         ImGui::End();
 
+        // Draw the window for displaying info
+        ImGui::SetNextWindowPos(ImVec2(0, 520), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(600, 340), ImGuiCond_Always);
+        ImGui::Begin("Info");
+        ImGui::Text("FPS: %f", ImGui::GetIO().Framerate);
+        ImGui::Text("Rendered Frames: %d", this->renderedFrameCount);
+        ImGui::Text("Anim Frames: %d", this->animFrameCount);
+        ImGui::Text("OffsetX_inShader: %f", this->offsetX_inShader);
+        ImGui::Text("OffsetY_inShader: %f", this->offsetY_inShader);
+        ImGui::Text("ZoomMultiplier_inShader: %f", this->zoomMultiplier_inShader);
+        ImGui::Text("SensorDistance_inShader: %f", this->sensorDistance_inShader);
+        ImGui::Text("SensorAngle_inShader: %f", this->sensorAngle_inShader);
+        ImGui::Text("TurnSpeed_inShader: %f", this->turnSpeed_inShader);
+        ImGui::Text("Speed_inShader: %f", this->speed_inShader);
+        ImGui::Text("DrawSensors_inShader: %d", this->drawSensors_inShader);
+        ImGui::Text("Diffuse_inShader: %f", this->diffuse_inShader);
+        ImGui::Text("Fade_inShader: %f", this->fade_inShader);
+        ImGui::Text("MainAgentColour_inShader: %f, %f, %f", this->mainAgentColour_inShader[0], this->mainAgentColour_inShader[1], this->mainAgentColour_inShader[2]);
+        ImGui::Text("AgentXDirectionColour_inShader: %f, %f, %f", this->agentXDirectionColour_inShader[0], this->agentXDirectionColour_inShader[1], this->agentXDirectionColour_inShader[2]);
+        ImGui::Text("AgentYDirectionColour_inShader: %f, %f, %f", this->agentYDirectionColour_inShader[0], this->agentYDirectionColour_inShader[1], this->agentYDirectionColour_inShader[2]);
+        ImGui::Text("SensorColour_inShader: %f, %f, %f", this->sensorColour_inShader[0], this->sensorColour_inShader[1], this->sensorColour_inShader[2]);
+        ImGui::End();
+
         // Check if any of the uniforms need to be updated, and if so, update them
         this->checkSet1f_compute("sensorDistance", this->sensorDistance, this->sensorDistance_inShader, this->agentComputeShader);
         this->checkSet1f_compute("sensorAngle", this->sensorAngle, this->sensorAngle_inShader, this->agentComputeShader);
@@ -439,7 +462,7 @@ public: // ==================================================== PUBLIC =========
             this->animFrameCount++;
             free(pixels);
         }
-        this->renderedFrameCount++;
+        this->renderedFrameCount++;        
     }
     
 };

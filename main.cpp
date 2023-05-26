@@ -56,25 +56,13 @@ int main(){
     /*
         ===== Main loop
     */
-    // Variables for performance tracking
-    auto start = std::chrono::high_resolution_clock::now();
-    auto end = std::chrono::high_resolution_clock::now();
-    double frameTime = 0;
-    double frameRate = 0;
-    int f = 0;
     while(!glfwWindowShouldClose(window)){
-        start = std::chrono::high_resolution_clock::now();
         // ===== Process input and start a new imgui frame
         glfwPollEvents();
         if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){ glfwSetWindowShouldClose(window, true); }
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-        ImGui::SetNextWindowPos(ImVec2(610, 0), ImGuiCond_Always);
-        ImGui::Begin("Performance");
-        ImGui::Text("FPS: %f", frameRate);
-        ImGui::End();
 
         // ===== Draw imgui window, update+render simulation
         sim.update(); // imgui, window, etc
@@ -86,13 +74,6 @@ int main(){
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         GLCall(glClear(GL_COLOR_BUFFER_BIT));
-        end = std::chrono::high_resolution_clock::now();
-        frameTime += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        if(f++ == 10){
-            frameRate = 1000000.0 / (frameTime / 10.0);
-            frameTime = 0;
-            f = 0;
-        }
     }
 
     /*
